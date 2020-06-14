@@ -1,9 +1,10 @@
 on: [push]
 
-name: Self tests and code coverage
+name: Coverage
 
 jobs:
   coverage:
+    name: Self tests and code coverage
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository

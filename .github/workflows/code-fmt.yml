@@ -1,9 +1,10 @@
 on: [push]
 
-name: Enforce canonical Rust code format
+name: Format
 
 jobs:
-  build_and_test:
+  cargo_fmt:
+    name: Enforce canonical Rust code format
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
