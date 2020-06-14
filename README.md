@@ -1,7 +1,7 @@
 # rsgit
 Pure Rust-native implementation of git
 
-![Tests](https://github.com/rust-git/rsgit/workflows/Tests/badge.svg)
+[![Tests](https://github.com/rust-git/rsgit/workflows/Tests/badge.svg)](https://github.com/rust-git/rsgit/actions?query=workflow%3ATests)
 [![Code coverage](https://codecov.io/gh/rust-git/rsgit/branch/main/graph/badge.svg)](https://codecov.io/gh/rust-git/rsgit)
 
 **This is a very preliminary project.** I'm doing this for fun. (Yes, I might be crazy.)
