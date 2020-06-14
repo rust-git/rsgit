@@ -18,5 +18,7 @@ jobs:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         run: |
           cargo install cargo-tarpaulin
+          echo "--- ENV DUMP ---"
+          bash export
           cargo tarpaulin --out Xml
           bash <(curl -s https://codecov.io/bash) -X gcov -t $CODECOV_TOKEN
