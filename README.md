@@ -1,6 +1,9 @@
 # rsgit
 Pure Rust-native implementation of git
 
+![Build Status](https://github.com/rust-git/rsgit/workflows/.github/workflows/coverage.yml/badge.svg?branch=main)
+![Code Coverage](https://codecov.io/gh/rust-git/rsgit/branch/main/graph/badge.svg)](https://codecov.io/gh/rust-git/rsgit)
+
 **This is a very preliminary project.** I'm doing this for fun. (Yes, I might be crazy.)
 
 As of this writing (June 2020), I'm relatively new to Rust, but a git enthusiast. I started a [similar project](https://xgit.io) a year ago, but as I've started to explore Rust, I'm finding myself intrigued.
