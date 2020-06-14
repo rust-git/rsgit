@@ -1,22 +1,28 @@
 on: [push]
 
-name: PR validation
+name: Code coverage
 
 jobs:
   coverage:
-    name: Check code coverage
+    name: Tarpaulin
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
-      - uses: actions-rs/toolchain@v1
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Install stable toolchain
+        uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
-      - name: Push to codecov.io
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-        run: |
-          cargo install cargo-tarpaulin
-          cargo tarpaulin --out Xml
-          bash <(curl -s https://codecov.io/bash) -X gcov -t $CODECOV_TOKEN
+          override: true
+
+      - name: Run cargo-tarpaulin
+        uses: actions-rs/tarpaulin@v0.1
+        with:
+          version: '0.9.0'
+          args: '-- --test-threads 1'
+
+      - name: Upload to codecov.io
+        uses: codecov/codecov-action@v1.0.2
+        with:
+          token: ${{secrets.CODECOV_TOKEN}}
