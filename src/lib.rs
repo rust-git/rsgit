@@ -6,6 +6,10 @@ pub fn silently_do_nothing() {
     println!("Even more nothing");
 }
 
+pub fn said_nothing_once() {
+    println!("Why say it again?");
+}
+
 #[cfg(test)]
 mod tests {
     #[test]
