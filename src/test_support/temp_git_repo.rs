@@ -112,7 +112,7 @@ mod tests {
     fn temp_path() {
         let path = {
             let mut r = TempGitRepo::new();
-            r.git_command(&["init"]);
+            r.git_command(&["status"]);
 
             let path = r.path().to_path_buf();
 
@@ -144,5 +144,12 @@ mod tests {
         // behind TGR's back, it will be deleted at end of test.)
 
         assert_eq!(repo_dir.is_dir(), true);
+    }
+
+    #[test]
+    #[should_panic(expected = "git command failed with status")]
+    fn git_command_error() {
+        let mut r = TempGitRepo::new();
+        r.git_command(&["bogus"]);
     }
 }
