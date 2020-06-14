@@ -2,6 +2,10 @@ pub fn do_nothing() {
     println!("Nothing");
 }
 
+pub fn silently_do_nothing() {
+    println!("Even more nothing");
+}
+
 #[cfg(test)]
 mod tests {
     #[test]
