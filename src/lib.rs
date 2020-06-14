@@ -1,3 +1,6 @@
+mod attribution;
+pub use attribution::Attribution;
+
 pub fn do_nothing() {
     println!("Nothing");
 }
