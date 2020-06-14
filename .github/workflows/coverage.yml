@@ -1,10 +1,9 @@
 on: [push]
 
-name: Self tests
+name: Self tests and code coverage
 
 jobs:
   coverage:
-    name: Tarpaulin
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
