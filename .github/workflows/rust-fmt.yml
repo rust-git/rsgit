@@ -1,10 +1,10 @@
 on: [push]
 
-name: Check Rust format
+name: PR validation
 
 jobs:
   build_and_test:
-    name: Check Rust format
+    name: Enforce Rust format
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
