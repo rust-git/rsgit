@@ -1,6 +1,6 @@
 on: [push]
 
-name: Code coverage
+name: Self tests
 
 jobs:
   coverage:

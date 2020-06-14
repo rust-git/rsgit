@@ -1,10 +1,10 @@
 on: [push]
 
-name: PR validation
+name: Code format
 
 jobs:
   build_and_test:
-    name: Enforce Rust format
+    name: cargo fmt -- --check
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
