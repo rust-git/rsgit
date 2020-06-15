@@ -70,15 +70,7 @@ impl TempGitRepo {
         let git_config_path = self.path.join(".git/config");
         fs::write(git_config_path, git_config_txt).unwrap();
 
-        let git_info_exclude_txt = r#"
-                # git ls-files --others --exclude-from=.git/info/exclude
-                # Lines that start with '#' are comments.
-                # For a project mostly in C, the following would be a good set of
-                # exclude patterns (uncomment them if you want to use them):
-                # *.[oa]
-                # *~
-                .DS_Store
-                "#;
+        let git_info_exclude_txt = "# git ls-files --others --exclude-from=.git/info/exclude\n# Lines that start with '#' are comments.\n# For a project mostly in C, the following would be a good set of\n# exclude patterns (uncomment them if you want to use them):\n# *.[oa]\n# *~\n.DS_Store\n";
 
         let git_info_exclude_path = self.path.join(".git/info/exclude");
         fs::write(git_info_exclude_path, git_info_exclude_txt).unwrap();
