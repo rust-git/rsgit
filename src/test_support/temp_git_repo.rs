@@ -56,6 +56,13 @@ impl TempGitRepo {
     fn init(&mut self) {
         self.git_command(&["init"]);
 
+        // Some older versions of git create a branches directory, but it's
+        // considered deprecated. We'll remove it so folder comparisons are canonical.
+        // Don't worry if it doesn't exist.
+
+        let branches_dir = self.path.join(".git/branches");
+        fs::remove_dir_all(&branches_dir).unwrap_or(());
+
         // Some things change too much from one version to another of git.
         // Rewrite to a canonical version so we can test against rsgit's output.
 
