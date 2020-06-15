@@ -65,9 +65,23 @@ impl TempGitRepo {
         fs::remove_dir_all(&hooks_dir).unwrap_or(());
         fs::create_dir_all(&hooks_dir).unwrap();
 
-        // TO DO: Rewrite .git/config.
+        let git_config_txt = "[core]\n\trepositoryformatversion = 0\n\tfilemode = true\n\tbare = false\n\tlogallrefupdates = true\n";
 
-        // TO DO: Rewrite .git/info/exclude.
+        let git_config_path = self.path.join(".git/config");
+        fs::write(git_config_path, git_config_txt).unwrap();
+
+        let git_info_exclude_txt = r#"
+                # git ls-files --others --exclude-from=.git/info/exclude
+                # Lines that start with '#' are comments.
+                # For a project mostly in C, the following would be a good set of
+                # exclude patterns (uncomment them if you want to use them):
+                # *.[oa]
+                # *~
+                .DS_Store
+                "#;
+
+        let git_info_exclude_path = self.path.join(".git/info/exclude");
+        fs::write(git_info_exclude_path, git_info_exclude_txt).unwrap();
     }
 
     // Return the path for this repo's root (working directory).
