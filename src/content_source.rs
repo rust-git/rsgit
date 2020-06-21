@@ -11,12 +11,12 @@ pub trait ContentSource<'a> {
     /// Returns the length (in bytes) of the content.
     fn len(&self) -> usize;
 
-    // Returns true if the content is empty.
+    /// Returns true if the content is empty.
     fn is_empty(&self) -> bool {
         self.len() == 0
     }
 
-    // Returns a `Read` struct which can be used for reading the content.
+    /// Returns a `Read` struct which can be used for reading the content.
     fn open(&'a self) -> Box<dyn Read + 'a>;
 }
 
