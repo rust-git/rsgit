@@ -5,7 +5,8 @@ mod content_source;
 pub use content_source::ContentSource;
 
 mod object;
-pub use object::ObjectType;
+pub use object::Object;
+pub use object::ObjectKind;
 
 pub mod on_disk_repo;
 
