@@ -27,8 +27,8 @@ struct ByteSliceReader<'a> {
 }
 
 impl<'a> ByteSliceReader<'a> {
-    fn new<'x>(v: &'x [u8]) -> ByteSliceReader<'x> {
-      ByteSliceReader {
+    fn new(v: &[u8]) -> ByteSliceReader {
+        ByteSliceReader {
             v,
             len: v.len(),
             offset: 0,
