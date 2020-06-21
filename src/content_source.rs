@@ -11,6 +11,11 @@ pub trait ContentSource<'a> {
     /// Returns the length (in bytes) of the content.
     fn len(&self) -> usize;
 
+    // Returns true if the content is empty.
+    fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+
     // Returns a `Read` struct which can be used for reading the content.
     fn open(&'a self) -> Box<dyn Read + 'a>;
 }
@@ -77,6 +82,8 @@ mod tests {
         let l = ContentSource::len(&v);
         assert_eq!(l, 0);
 
+        assert!(ContentSource::is_empty(&v));
+
         let mut buf = [0; 10];
         let mut f = v.open();
 
@@ -95,6 +102,8 @@ mod tests {
 
         let l = ContentSource::len(&v);
         assert_eq!(l, 4);
+
+        assert!(!ContentSource::is_empty(&v));
 
         let mut buf = [0; 3];
         let mut f = v.open();
@@ -122,6 +131,8 @@ mod tests {
         let l = ContentSource::len(s);
         assert_eq!(l, 0);
 
+        assert!(ContentSource::is_empty(s));
+
         let mut buf = [0; 10];
         let mut f = s.open();
 
@@ -140,6 +151,8 @@ mod tests {
 
         let l = ContentSource::len(s);
         assert_eq!(l, 4);
+
+        assert!(!ContentSource::is_empty(s));
 
         let mut buf = [0; 3];
         let mut f = s.open();
