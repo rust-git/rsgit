@@ -4,7 +4,7 @@ use std::result::Result;
 use std::vec::Vec;
 
 /// Trait used for reading git object content from various sources.
-pub trait ContentSource<'a> {
+pub trait ContentSource {
     // TO DO: Rework this as async at some point? I'm not ready for that yet.
     // https://github.com/rust-git/rsgit/issues/18
 
@@ -17,7 +17,7 @@ pub trait ContentSource<'a> {
     }
 
     /// Returns a `Read` struct which can be used for reading the content.
-    fn open(&'a self) -> Box<dyn Read + 'a>;
+    fn open<'a>(&'a self) -> Box<dyn Read + 'a>;
 }
 
 struct ByteSliceReader<'a> {
@@ -27,7 +27,7 @@ struct ByteSliceReader<'a> {
 }
 
 impl<'a> ByteSliceReader<'a> {
-    fn new(v: &[u8]) -> ByteSliceReader {
+    fn new(v: &'a [u8]) -> ByteSliceReader<'a> {
         ByteSliceReader {
             v,
             len: v.len(),
@@ -36,7 +36,7 @@ impl<'a> ByteSliceReader<'a> {
     }
 }
 
-impl Read for ByteSliceReader<'_> {
+impl<'a> Read for ByteSliceReader<'a> {
     fn read(&mut self, buf: &mut [u8]) -> Result<usize, Error> {
         let len = self.len;
         if self.offset < len {
@@ -51,22 +51,22 @@ impl Read for ByteSliceReader<'_> {
     }
 }
 
-impl<'a> ContentSource<'a> for Vec<u8> {
+impl ContentSource for Vec<u8> {
     fn len(&self) -> usize {
         self.len()
     }
 
-    fn open(&'a self) -> Box<dyn Read + 'a> {
+    fn open<'x>(&'x self) -> Box<dyn Read + 'x> {
         Box::new(ByteSliceReader::new(self))
     }
 }
 
-impl<'a> ContentSource<'a> for str {
+impl ContentSource for String {
     fn len(&self) -> usize {
         self.len()
     }
 
-    fn open(&'a self) -> Box<dyn Read + 'a> {
+    fn open<'x>(&'x self) -> Box<dyn Read + 'x> {
         Box::new(ByteSliceReader::new(self.as_bytes()))
     }
 }
@@ -125,13 +125,13 @@ mod tests {
     }
 
     #[test]
-    fn empty_sr() {
-        let s = "";
+    fn empty_str() {
+        let s = "".to_string();
 
-        let l = ContentSource::len(s);
+        let l = ContentSource::len(&s);
         assert_eq!(l, 0);
 
-        assert!(ContentSource::is_empty(s));
+        assert!(ContentSource::is_empty(&s));
 
         let mut buf = [0; 10];
         let mut f = s.open();
@@ -147,12 +147,12 @@ mod tests {
 
     #[test]
     fn str_with_content() {
-        let s = "ABCD";
+        let s = "ABCD".to_string();
 
-        let l = ContentSource::len(s);
+        let l = ContentSource::len(&s);
         assert_eq!(l, 4);
 
-        assert!(!ContentSource::is_empty(s));
+        assert!(!ContentSource::is_empty(&s));
 
         let mut buf = [0; 3];
         let mut f = s.open();
