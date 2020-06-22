@@ -6,6 +6,8 @@ use std::fmt::Write;
 use std::io::Read;
 use std::str::FromStr;
 
+use sha1::{Digest, Sha1};
+
 use crate::content_source::ContentSource;
 
 /// An error which can be returned when parsing a git object ID.
@@ -181,10 +183,7 @@ impl Object {
     }
 
     /// Return the ID of the object, if it is known.
-    #[cfg_attr(tarpaulin, skip)]
-    pub fn id(&self) -> &Option<ObjectId> {
-        // Code coverage doesn't seem to see this line.
-        // Not sure why, but I have independently verified it is reached.
+    pub fn id<'a>(&'a self) -> &'a Option<ObjectId> {
         &self.id
     }
 
@@ -206,6 +205,53 @@ impl Object {
     /// Returns a `Read` struct which can be used for reading the content.
     pub fn open<'a>(&'a self) -> Box<dyn Read + 'a> {
         self.content_source.open()
+    }
+
+    /// Computes the object's ID from its content, size, and type.
+    ///
+    /// No-op if an ID has been assigned already.
+    ///
+    /// This is functionally equivalent to the `git hash-object` command
+    /// without the `-w` option that would write the object to the repo.
+    pub fn assign_id(&mut self) -> std::io::Result<()> {
+        if self.id.is_none() {
+            let mut hasher = Sha1::new();
+
+            match self.kind {
+                ObjectKind::Blob => hasher.update(b"blob"),
+                ObjectKind::Commit => hasher.update(b"commit"),
+                ObjectKind::Tag => hasher.update(b"tag"),
+                ObjectKind::Tree => hasher.update(b"tree"),
+            }
+            hasher.update(b" ");
+
+            let lstr = self.len().to_string();
+            hasher.update(lstr);
+            hasher.update(b"\0");
+
+            {
+                let mut reader = self.open();
+                let mut buf = [0; 8192];
+
+                loop {
+                    let n = reader.read(&mut buf)?;
+                    if n > 0 {
+                        hasher.update(&buf[..n]);
+                    } else {
+                        break;
+                    }
+                }
+            }
+
+            let final_hash = hasher.finalize();
+
+            let mut id: Vec<u8> = vec![0; 20];
+            id[0..20].clone_from_slice(&final_hash);
+
+            self.id = Some(ObjectId { id });
+        }
+
+        Ok(())
     }
 }
 
@@ -381,5 +427,28 @@ mod tests {
         assert!(r.is_ok());
         assert_eq!(r.unwrap(), 0);
         assert_eq!(buf, [68, 66, 67]);
+    }
+
+    #[test]
+    fn assign_id() {
+        // $ echo 'test content' | git hash-object --stdin
+        // d670460b4b4aece5915caf5c68d12f560a9fe3e4
+
+        let mut o = Object::new(ObjectKind::Blob, Box::new("test content\n".to_string()));
+        o.assign_id().unwrap();
+
+        assert_eq!(
+            o.id().as_ref().unwrap().to_string(),
+            "d670460b4b4aece5915caf5c68d12f560a9fe3e4"
+        );
+
+        // Verify that nothing changes on second assign attempt.
+
+        o.assign_id().unwrap();
+
+        assert_eq!(
+            o.id().as_ref().unwrap().to_string(),
+            "d670460b4b4aece5915caf5c68d12f560a9fe3e4"
+        );
     }
 }
