@@ -85,12 +85,13 @@ impl ObjectId {
 
         match hex.len() {
             40 => {
-                let maybe_id: Result<Vec<u8>, ParseObjectIdError> = hex
-                    .chunks(2)
-                    .map(|pair| -> Result<u8, ParseObjectIdError> {
-                        Ok(digit_value(pair[0])? << 4 | digit_value(pair[1])?)
-                    })
-                    .collect();
+                let byte_chunks = hex.chunks(2);
+
+                let nybbles = byte_chunks.map(|pair| -> Result<u8, ParseObjectIdError> {
+                    Ok(digit_value(pair[0])? << 4 | digit_value(pair[1])?)
+                });
+
+                let maybe_id: Result<Vec<u8>, ParseObjectIdError> = nybbles.collect();
 
                 match maybe_id {
                     Ok(id) => {
