@@ -126,10 +126,10 @@ impl FromStr for ObjectId {
     }
 }
 
+static CHARS: &[u8] = b"0123456789abcdef";
+
 impl fmt::Display for ObjectId {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        static CHARS: &[u8] = b"0123456789abcdef";
-
         for &byte in self.id.iter() {
             f.write_char(CHARS[(byte >> 4) as usize].into())?;
             f.write_char(CHARS[(byte & 0xf) as usize].into())?;
