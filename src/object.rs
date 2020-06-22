@@ -93,7 +93,15 @@ impl ObjectId {
                     .collect();
 
                 match maybe_id {
-                    Ok(id) => Ok(ObjectId { id }),
+                    Ok(id) => {
+                        if id.iter().all(|x| *x == 0) {
+                            Err(ParseObjectIdError {
+                                kind: ParseObjectIdErrorKind::Zero,
+                            })
+                        } else {
+                            Ok(ObjectId { id })
+                        }
+                    }
                     Err(err) => Err(err),
                 }
             }
@@ -120,7 +128,7 @@ impl FromStr for ObjectId {
 
 impl fmt::Display for ObjectId {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        static CHARS: &'static [u8] = b"0123456789abcdef";
+        static CHARS: &[u8] = b"0123456789abcdef";
 
         for &byte in self.id.iter() {
             f.write_char(CHARS[(byte >> 4) as usize].into())?;
@@ -198,6 +206,61 @@ mod tests {
     fn object_id_from_str() {
         let oid = ObjectId::from_hex("3cd9329ac53613a0bfa198ae28f3af957e49573c").unwrap();
         assert_eq!(oid.to_string(), "3cd9329ac53613a0bfa198ae28f3af957e49573c");
+    }
+
+    #[test]
+    fn object_id_from_empty_str() {
+        let r = ObjectId::from_hex("");
+        assert!(r.is_err());
+
+        if let Err(err) = r {
+            assert_eq!(err.kind(), ParseObjectIdErrorKind::Empty);
+            assert_eq!(err.to_string(), "cannot parse object ID from empty string");
+        }
+    }
+
+    #[test]
+    fn object_id_from_invalid_str() {
+        let r = ObjectId::from_hex("3cD9329ac53613a0bfa198ae28f3af957e49573c");
+        assert!(r.is_err());
+
+        if let Err(err) = r {
+            assert_eq!(err.kind(), ParseObjectIdErrorKind::InvalidDigit);
+            assert_eq!(err.to_string(), "non-hex digit found in string");
+        }
+    }
+
+    #[test]
+    fn object_id_too_long() {
+        let r = ObjectId::from_hex("3cd9329ac53613a0bfa198ae28f3af957e49573c4");
+        assert!(r.is_err());
+
+        if let Err(err) = r {
+            assert_eq!(err.kind(), ParseObjectIdErrorKind::Overflow);
+            assert_eq!(err.to_string(), "ID too large to fit in target type");
+        }
+    }
+
+    #[test]
+    fn object_id_too_short() {
+        let r = ObjectId::from_hex("3cd9329ac53613a0bfa198ae28f3af957e49573");
+        assert!(r.is_err());
+
+        if let Err(err) = r {
+            assert_eq!(err.kind(), ParseObjectIdErrorKind::Underflow);
+            assert_eq!(err.to_string(), "ID too small to fit in target type");
+        }
+    }
+
+    #[test]
+    fn object_id_zero() {
+        let r = ObjectId::from_hex("0000000000000000000000000000000000000000");
+        assert!(r.is_err());
+
+        if let Err(err) = r {
+            assert_eq!(err.kind(), ParseObjectIdErrorKind::Zero);
+            assert_eq!(err.to_string(), "ID would be zero");
+        }
     }
 
     #[test]
