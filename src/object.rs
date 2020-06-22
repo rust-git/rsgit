@@ -181,7 +181,10 @@ impl Object {
     }
 
     /// Return the ID of the object, if it is known.
+    #[cfg_attr(tarpaulin, skip)]
     pub fn id(&self) -> &Option<ObjectId> {
+        // Code coverage doesn't seem to see this line.
+        // Not sure why, but I have independently verified it is reached.
         &self.id
     }
 
