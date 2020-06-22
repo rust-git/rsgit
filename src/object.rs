@@ -203,8 +203,15 @@ mod tests {
     use super::*;
 
     #[test]
+    fn object_id_from_hex() {
+        let oid =
+            ObjectId::from_hex("3cd9329ac53613a0bfa198ae28f3af957e49573c".as_bytes()).unwrap();
+        assert_eq!(oid.to_string(), "3cd9329ac53613a0bfa198ae28f3af957e49573c");
+    }
+
+    #[test]
     fn object_id_from_str() {
-        let oid = ObjectId::from_hex("3cd9329ac53613a0bfa198ae28f3af957e49573c").unwrap();
+        let oid = ObjectId::from_str("3cd9329ac53613a0bfa198ae28f3af957e49573c").unwrap();
         assert_eq!(oid.to_string(), "3cd9329ac53613a0bfa198ae28f3af957e49573c");
     }
 
