@@ -65,7 +65,7 @@ impl fmt::Display for ParseObjectIdError {
 
 /// An object ID is a string that identifies an object within a repository.
 /// It is stored as a 20-byte signature, but can also be represented as 40 hex digits.
-#[derive(Clone, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct ObjectId {
     id: Vec<u8>,
 }
@@ -165,6 +165,7 @@ pub enum ObjectKind {
 /// This struct is constructed, modified, and shared as a working description of
 /// how to find and describe an object before it gets written to a repository.
 pub struct Object {
+    id: Option<ObjectId>,
     kind: ObjectKind,
     content_source: Box<dyn ContentSource>,
 }
@@ -173,9 +174,18 @@ impl Object {
     /// Create a new Object.
     pub fn new(kind: ObjectKind, content_source: Box<dyn ContentSource>) -> Object {
         Object {
+            id: None,
             kind,
             content_source,
         }
+    }
+
+    /// Return the ID of the object, if it is known.
+    #[cfg_attr(tarpaulin, skip)]
+    pub fn id(&self) -> &Option<ObjectId> {
+        // Code coverage doesn't seem to see this line.
+        // Not sure why, but I have independently verified it is reached.
+        &self.id
     }
 
     /// Return the kind of the object.
@@ -276,6 +286,7 @@ mod tests {
         let v = vec![];
         let o = Object::new(ObjectKind::Blob, Box::new(v));
 
+        assert_eq!(*o.id(), None);
         assert_eq!(o.kind(), ObjectKind::Blob);
         assert_eq!(o.len(), 0);
         assert!(o.is_empty());
@@ -297,6 +308,7 @@ mod tests {
         let v = vec![2, 3, 45, 67];
         let o = Object::new(ObjectKind::Blob, Box::new(v));
 
+        assert_eq!(*o.id(), None);
         assert_eq!(o.kind(), ObjectKind::Blob);
         assert_eq!(o.len(), 4);
         assert!(!o.is_empty());
@@ -325,6 +337,7 @@ mod tests {
         let s = "".to_string();
         let o = Object::new(ObjectKind::Blob, Box::new(s));
 
+        assert_eq!(*o.id(), None);
         assert_eq!(o.kind(), ObjectKind::Blob);
         assert_eq!(o.len(), 0);
         assert!(o.is_empty());
@@ -346,6 +359,7 @@ mod tests {
         let s = "ABCD".to_string();
         let o = Object::new(ObjectKind::Blob, Box::new(s));
 
+        assert_eq!(*o.id(), None);
         assert_eq!(o.kind(), ObjectKind::Blob);
         assert_eq!(o.len(), 4);
         assert!(!o.is_empty());
