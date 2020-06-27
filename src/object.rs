@@ -233,12 +233,7 @@ impl Object {
         if self.id.is_none() {
             let mut hasher = Sha1::new();
 
-            match self.kind {
-                ObjectKind::Blob => hasher.update(b"blob"),
-                ObjectKind::Commit => hasher.update(b"commit"),
-                ObjectKind::Tag => hasher.update(b"tag"),
-                ObjectKind::Tree => hasher.update(b"tree"),
-            }
+            hasher.update(self.kind.to_string());
             hasher.update(b" ");
 
             let lstr = self.len().to_string();
