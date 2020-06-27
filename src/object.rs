@@ -489,6 +489,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(tarpaulin, skip)]
     fn assign_id_from_file() {
         let dir = TempDir::new().unwrap();
         let path = dir.as_ref().join("example");
