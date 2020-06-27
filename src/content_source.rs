@@ -1,6 +1,5 @@
-use std::io::Error;
 use std::io::Read;
-use std::result::Result;
+use std::io::Result;
 use std::vec::Vec;
 
 /// Trait used for reading git object content from various sources.
@@ -37,7 +36,7 @@ impl<'a> ByteSliceReader<'a> {
 }
 
 impl<'a> Read for ByteSliceReader<'a> {
-    fn read(&mut self, buf: &mut [u8]) -> Result<usize, Error> {
+    fn read(&mut self, buf: &mut [u8]) -> Result<usize> {
         let len = self.len;
         if self.offset < len {
             let copy_len = (len - self.offset).min(buf.len());
