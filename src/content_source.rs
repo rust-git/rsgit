@@ -1,5 +1,4 @@
-use std::io::Read;
-use std::io::Result;
+use std::io::{Read, Result};
 use std::vec::Vec;
 
 /// Trait used for reading git object content from various sources.
@@ -16,7 +15,7 @@ pub trait ContentSource {
     }
 
     /// Returns a `Read` struct which can be used for reading the content.
-    fn open<'a>(&'a self) -> Box<dyn Read + 'a>;
+    fn open<'a>(&'a self) -> Result<Box<dyn Read + 'a>>;
 }
 
 struct ByteSliceReader<'a> {
@@ -55,8 +54,8 @@ impl ContentSource for Vec<u8> {
         self.len()
     }
 
-    fn open<'x>(&'x self) -> Box<dyn Read + 'x> {
-        Box::new(ByteSliceReader::new(self))
+    fn open<'x>(&'x self) -> Result<Box<dyn Read + 'x>> {
+        Ok(Box::new(ByteSliceReader::new(self)))
     }
 }
 
@@ -65,8 +64,8 @@ impl ContentSource for String {
         self.len()
     }
 
-    fn open<'x>(&'x self) -> Box<dyn Read + 'x> {
-        Box::new(ByteSliceReader::new(self.as_bytes()))
+    fn open<'x>(&'x self) -> Result<Box<dyn Read + 'x>> {
+        Ok(Box::new(ByteSliceReader::new(self.as_bytes())))
     }
 }
 
@@ -84,7 +83,7 @@ mod tests {
         assert!(ContentSource::is_empty(&v));
 
         let mut buf = [0; 10];
-        let mut f = v.open();
+        let mut f = v.open().unwrap();
 
         let r = f.read(&mut buf);
         assert!(r.is_ok());
@@ -105,7 +104,7 @@ mod tests {
         assert!(!ContentSource::is_empty(&v));
 
         let mut buf = [0; 3];
-        let mut f = v.open();
+        let mut f = v.open().unwrap();
 
         let r = f.read(&mut buf);
         assert!(r.is_ok());
@@ -133,7 +132,7 @@ mod tests {
         assert!(ContentSource::is_empty(&s));
 
         let mut buf = [0; 10];
-        let mut f = s.open();
+        let mut f = s.open().unwrap();
 
         let r = f.read(&mut buf);
         assert!(r.is_ok());
@@ -154,7 +153,7 @@ mod tests {
         assert!(!ContentSource::is_empty(&s));
 
         let mut buf = [0; 3];
-        let mut f = s.open();
+        let mut f = s.open().unwrap();
 
         let r = f.read(&mut buf);
         assert!(r.is_ok());

@@ -2,7 +2,7 @@
 //! object type and binary data identified by the hash of the binary data.
 
 use std::fmt::{self, Display, Formatter, Write};
-use std::io::Read;
+use std::io::{self, Read};
 use std::str::FromStr;
 
 use sha1::{Digest, Sha1};
@@ -219,7 +219,7 @@ impl Object {
     }
 
     /// Returns a `Read` struct which can be used for reading the content.
-    pub fn open<'a>(&'a self) -> Box<dyn Read + 'a> {
+    pub fn open<'a>(&'a self) -> io::Result<Box<dyn Read + 'a>> {
         self.content_source.open()
     }
 
@@ -230,7 +230,7 @@ impl Object {
     /// This is functionally equivalent to the
     /// [`git hash-object`](https://git-scm.com/docs/git-hash-object) command
     /// without the `-w` option that would write the object to the repo.
-    pub fn assign_id(&mut self) -> std::io::Result<()> {
+    pub fn assign_id(&mut self) -> io::Result<()> {
         if self.id.is_none() {
             let mut hasher = Sha1::new();
 
@@ -242,7 +242,7 @@ impl Object {
             hasher.update(b"\0");
 
             {
-                let mut reader = self.open();
+                let mut reader = self.open()?;
                 let mut buf = [0; 8192];
                 let mut n = 1;
 
@@ -365,7 +365,7 @@ mod tests {
         assert!(o.is_empty());
 
         let mut buf = [0; 10];
-        let mut f = o.open();
+        let mut f = o.open().unwrap();
 
         let r = f.read(&mut buf);
         assert!(r.is_ok());
@@ -387,7 +387,7 @@ mod tests {
         assert!(!o.is_empty());
 
         let mut buf = [0; 3];
-        let mut f = o.open();
+        let mut f = o.open().unwrap();
 
         let r = f.read(&mut buf);
         assert!(r.is_ok());
@@ -416,7 +416,7 @@ mod tests {
         assert!(o.is_empty());
 
         let mut buf = [0; 10];
-        let mut f = o.open();
+        let mut f = o.open().unwrap();
 
         let r = f.read(&mut buf);
         assert!(r.is_ok());
@@ -438,7 +438,7 @@ mod tests {
         assert!(!o.is_empty());
 
         let mut buf = [0; 3];
-        let mut f = o.open();
+        let mut f = o.open().unwrap();
 
         let r = f.read(&mut buf);
         assert!(r.is_ok());
