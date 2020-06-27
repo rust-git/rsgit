@@ -7,6 +7,9 @@ pub use content_source::ContentSource;
 mod file_content_source;
 pub use file_content_source::FileContentSource;
 
+mod file_mode;
+pub use file_mode::FileMode;
+
 mod object;
 pub use object::Object;
 pub use object::ObjectKind;
