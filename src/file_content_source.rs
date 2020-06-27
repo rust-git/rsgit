@@ -79,4 +79,18 @@ mod tests {
         let err = fcs.err().unwrap();
         assert_eq!(err.kind(), ErrorKind::NotFound);
     }
+
+    #[test]
+    fn existing_dir() {
+        let dir = TempDir::new().unwrap();
+        let path = dir.as_ref().join("example");
+        fs::create_dir_all(&path).unwrap();
+
+        let fcs = FileContentSource::new(&path);
+        assert!(fcs.is_err());
+
+        let err = fcs.err().unwrap();
+        assert_eq!(err.kind(), ErrorKind::NotFound);
+        assert_eq!(err.to_string(), "not a single file");
+    }
 }
