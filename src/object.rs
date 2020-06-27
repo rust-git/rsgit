@@ -1,8 +1,7 @@
 //! Represents the git concept of an "object" which is a tuple of
 //! object type and binary data identified by the hash of the binary data.
 
-use std::fmt;
-use std::fmt::Write;
+use std::fmt::{self, Display, Formatter, Write};
 use std::io::Read;
 use std::str::FromStr;
 
@@ -60,7 +59,7 @@ impl ParseObjectIdError {
 }
 
 impl fmt::Display for ParseObjectIdError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         self.__description().fmt(f)
     }
 }
@@ -160,6 +159,20 @@ pub enum ObjectKind {
     Tree,
     Commit,
     Tag,
+}
+
+impl Display for ObjectKind {
+    #[cfg_attr(tarpaulin, skip)]
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        // Code coverage doesn't see the "match self" line.
+        // Not sure why, but I have independently verified it is reached.
+        match self {
+            ObjectKind::Blob => write!(f, "blob"),
+            ObjectKind::Tree => write!(f, "tree"),
+            ObjectKind::Commit => write!(f, "commit"),
+            ObjectKind::Tag => write!(f, "tag"),
+        }
+    }
 }
 
 /// Describes a single object stored (or about to be stored) in a git repository.
@@ -331,12 +344,28 @@ mod tests {
     }
 
     #[test]
+    fn object_kind_to_string() {
+        let k = ObjectKind::Blob;
+        assert_eq!(k.to_string(), "blob");
+
+        let k = ObjectKind::Commit;
+        assert_eq!(k.to_string(), "commit");
+
+        let k = ObjectKind::Tree;
+        assert_eq!(k.to_string(), "tree");
+
+        let k = ObjectKind::Tag;
+        assert_eq!(k.to_string(), "tag");
+    }
+
+    #[test]
     fn empty_vec() {
         let v = vec![];
         let o = Object::new(ObjectKind::Blob, Box::new(v));
 
         assert_eq!(*o.id(), None);
         assert_eq!(o.kind(), ObjectKind::Blob);
+        assert_eq!(o.kind().to_string(), "blob");
         assert_eq!(o.len(), 0);
         assert!(o.is_empty());
 
