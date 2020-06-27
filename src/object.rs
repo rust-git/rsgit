@@ -227,7 +227,8 @@ impl Object {
     ///
     /// No-op if an ID has been assigned already.
     ///
-    /// This is functionally equivalent to the `git hash-object` command
+    /// This is functionally equivalent to the
+    /// [`git hash-object`](https://git-scm.com/docs/git-hash-object) command
     /// without the `-w` option that would write the object to the repo.
     pub fn assign_id(&mut self) -> std::io::Result<()> {
         if self.id.is_none() {
