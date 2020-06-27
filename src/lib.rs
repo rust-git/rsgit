@@ -4,6 +4,9 @@ pub use attribution::Attribution;
 mod content_source;
 pub use content_source::ContentSource;
 
+mod file_content_source;
+pub use file_content_source::FileContentSource;
+
 mod object;
 pub use object::Object;
 pub use object::ObjectKind;
