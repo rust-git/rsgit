@@ -160,7 +160,10 @@ pub enum ObjectKind {
 }
 
 impl Display for ObjectKind {
+    #[cfg_attr(tarpaulin, skip)]
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        // Code coverage doesn't see the "match self" line.
+        // Not sure why, but I have independently verified it is reached.
         match self {
             ObjectKind::Blob => write!(f, "blob"),
             ObjectKind::Tree => write!(f, "tree"),
