@@ -8,7 +8,7 @@
 /// * `0o120000` - symbolic link
 /// * `0o040000` - tree (subdirectory)
 /// * `0o160000` - submodule (aka gitlink)
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum FileMode {
     Normal,
     Executable,
