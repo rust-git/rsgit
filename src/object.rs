@@ -270,6 +270,15 @@ impl Object {
 mod tests {
     use super::*;
 
+    use std::fs::File;
+    use std::io::Write;
+    use std::process::Command;
+
+    use crate::FileContentSource;
+
+    extern crate tempfile;
+    use tempfile::TempDir;
+
     #[test]
     fn object_id_from_hex() {
         let oid =
@@ -477,5 +486,34 @@ mod tests {
             o.id().as_ref().unwrap().to_string(),
             "d670460b4b4aece5915caf5c68d12f560a9fe3e4"
         );
+    }
+
+    #[test]
+    fn assign_id_from_file() {
+        let dir = TempDir::new().unwrap();
+        let path = dir.as_ref().join("example");
+
+        {
+            let mut f = File::create(&path).unwrap();
+            let s = "foobar".repeat(1000);
+            f.write_all(s.as_bytes()).unwrap();
+        }
+
+        let path_str = path.to_str().unwrap();
+        let output = Command::new("git")
+            .args(&["hash-object", path_str])
+            .output()
+            .unwrap();
+
+        let expected_id = String::from_utf8(output.stdout).unwrap();
+        let expected_id = expected_id.trim();
+
+        let fcs = FileContentSource::new(&path).unwrap();
+        assert_eq!(fcs.len(), 6000);
+
+        let mut o = Object::new(ObjectKind::Blob, Box::new(fcs));
+        o.assign_id().unwrap();
+
+        assert_eq!(o.id().as_ref().unwrap().to_string(), expected_id);
     }
 }
