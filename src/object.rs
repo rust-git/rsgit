@@ -244,13 +244,12 @@ impl Object {
             {
                 let mut reader = self.open();
                 let mut buf = [0; 8192];
+                let mut n = 1;
 
-                loop {
-                    let n = reader.read(&mut buf)?;
+                while n > 0 {
+                    n = reader.read(&mut buf)?;
                     if n > 0 {
                         hasher.update(&buf[..n]);
-                    } else {
-                        break;
                     }
                 }
             }
