@@ -225,6 +225,130 @@ mod tests {
     }
 
     #[test]
+    fn partial_cmp_simple_case() {
+        let l = PathMode {
+            path: b"abc",
+            mode: FileMode::Normal,
+        };
+        let r = PathMode {
+            path: b"def",
+            mode: FileMode::Normal,
+        };
+        assert_eq!(l.partial_cmp(&r).unwrap(), Ordering::Less);
+
+        let r = PathMode {
+            path: b"aba",
+            mode: FileMode::Normal,
+        };
+        assert_eq!(l.partial_cmp(&r).unwrap(), Ordering::Greater);
+    }
+
+    #[test]
+    fn partial_cmp_lengths_mismatch() {
+        let l = PathMode {
+            path: b"abc",
+            mode: FileMode::Normal,
+        };
+        let r = PathMode {
+            path: b"ab",
+            mode: FileMode::Normal,
+        };
+        assert_eq!(l.partial_cmp(&r).unwrap(), Ordering::Greater);
+
+        let l = PathMode {
+            path: b"ab",
+            mode: FileMode::Normal,
+        };
+        let r = PathMode {
+            path: b"aba",
+            mode: FileMode::Normal,
+        };
+        assert_eq!(l.partial_cmp(&r).unwrap(), Ordering::Less);
+    }
+
+    #[test]
+    fn partial_cmp_implied_tree() {
+        let l = PathMode {
+            path: b"ab/",
+            mode: FileMode::Tree,
+        };
+        let r = PathMode {
+            path: b"ab",
+            mode: FileMode::Tree,
+        };
+        assert_eq!(l.partial_cmp(&r).unwrap(), Ordering::Equal);
+
+        let l = PathMode {
+            path: b"ab",
+            mode: FileMode::Tree,
+        };
+        let r = PathMode {
+            path: b"ab/",
+            mode: FileMode::Tree,
+        };
+        assert_eq!(l.partial_cmp(&r).unwrap(), Ordering::Equal);
+    }
+
+    #[test]
+    fn partial_cmp_exact_match() {
+        let l = PathMode {
+            path: b"abc",
+            mode: FileMode::Normal,
+        };
+        let r = PathMode {
+            path: b"abc",
+            mode: FileMode::Normal,
+        };
+        assert_eq!(l.partial_cmp(&r).unwrap(), Ordering::Equal);
+    }
+
+    #[test]
+    fn partial_cmp_match_except_file_mode() {
+        let l = PathMode {
+            path: b"abc",
+            mode: FileMode::Tree,
+        };
+        let r = PathMode {
+            path: b"abc",
+            mode: FileMode::Normal,
+        };
+        assert_eq!(l.partial_cmp(&r).unwrap(), Ordering::Greater);
+
+        let l = PathMode {
+            path: b"abc",
+            mode: FileMode::Normal,
+        };
+        let r = PathMode {
+            path: b"abc",
+            mode: FileMode::Tree,
+        };
+        assert_eq!(l.partial_cmp(&r).unwrap(), Ordering::Less);
+    }
+
+    #[test]
+    fn partial_cmp_gitlink_exception() {
+        let l = PathMode {
+            path: b"abc",
+            mode: FileMode::Tree,
+        };
+        let r = PathMode {
+            path: b"abc",
+            mode: FileMode::Submodule,
+        };
+        assert_eq!(l.partial_cmp(&r).unwrap(), Ordering::Equal);
+
+        let l = PathMode {
+            path: b"abc",
+            mode: FileMode::Submodule,
+        };
+        let r = PathMode {
+            path: b"abc",
+            mode: FileMode::Tree,
+        };
+        assert_eq!(l.partial_cmp(&r).unwrap(), Ordering::Equal);
+    }
+
+    #[test]
     fn cmp_same_name_simple_case() {
         let l = PathMode {
             path: b"abc",
