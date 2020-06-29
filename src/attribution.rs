@@ -6,6 +6,7 @@ use std::fmt;
 /// Attributions are typically associated with commits or tags in git.
 ///
 /// The `timestamp` value is in milliseconds relative to the Unix era.
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Attribution {
     name: String,
     email: String,
