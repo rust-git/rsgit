@@ -79,10 +79,10 @@ const EMPTY: [u8; 0] = [];
 const SLASH: [u8; 1] = [47];
 
 fn suffix_or_slash(suffix: &[u8], mode: FileMode) -> &[u8] {
-    if suffix.len() > 0 || mode != FileMode::Tree {
-        suffix
-    } else {
+    if suffix.is_empty() && mode == FileMode::Tree {
         &SLASH
+    } else {
+        suffix
     }
 }
 
