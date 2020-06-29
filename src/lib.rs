@@ -18,4 +18,7 @@ pub use object::ParseObjectIdErrorKind;
 
 pub mod on_disk_repo;
 
+mod path_mode;
+pub use path_mode::PathMode;
+
 pub(crate) mod test_support;
