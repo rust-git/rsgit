@@ -556,5 +556,72 @@ mod tests {
             .unwrap_err(),
             GitPathError::ContainsIncompleteUnicodeCharacters
         );
+
+        let name = &[97, 98, 0xE2, 0x80, 0xAE];
+        let a = GitPath::new_with_platform_checks(
+            name,
+            &CheckPlatforms {
+                windows: false,
+                mac: true,
+            },
+        )
+        .unwrap();
+
+        assert_eq!(&a.path(), &name);
+        assert_eq!(
+            a.checked_platforms(),
+            &CheckPlatforms {
+                mac: true,
+                windows: false
+            }
+        );
+
+        let bad_name = b".git\xEF";
+        let a = GitPath::new(bad_name).unwrap();
+
+        assert_eq!(&a.path(), bad_name);
+        assert_eq!(
+            a.checked_platforms(),
+            &CheckPlatforms {
+                mac: false,
+                windows: false
+            }
+        );
+
+        assert_eq!(
+            GitPath::new_with_platform_checks(
+                bad_name,
+                &CheckPlatforms {
+                    mac: true,
+                    windows: false
+                }
+            )
+            .unwrap_err(),
+            GitPathError::ContainsIncompleteUnicodeCharacters
+        );
+
+        let bad_name = b".git\xE2\xAB";
+        let a = GitPath::new(bad_name).unwrap();
+
+        assert_eq!(&a.path(), bad_name);
+        assert_eq!(
+            a.checked_platforms(),
+            &CheckPlatforms {
+                mac: false,
+                windows: false
+            }
+        );
+
+        assert_eq!(
+            GitPath::new_with_platform_checks(
+                bad_name,
+                &CheckPlatforms {
+                    mac: true,
+                    windows: false
+                }
+            )
+            .unwrap_err(),
+            GitPathError::ContainsIncompleteUnicodeCharacters
+        );
     }
 }
