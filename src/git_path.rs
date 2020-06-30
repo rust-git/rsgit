@@ -320,6 +320,9 @@ mod tests {
                 GitPathError::InvalidWindowsCharacter
             );
         }
+
+        let a = GitPath::new_with_platform_checks(b"ab/cd/ef", true, false).unwrap();
+        assert_eq!(a.path(), b"ab/cd/ef");
     }
 
     const MAC_HFS_GIT_NAMES: [&str; 16] = [
