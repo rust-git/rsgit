@@ -24,7 +24,7 @@ pub enum GitPathError {
     ContainsIncompleteUnicodeCharacters,
 }
 
-/// Which platform's OS conventions should be checked?
+/// Which platform's file naming conventions should be checked?
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct CheckPlatforms {
     pub windows: bool,
