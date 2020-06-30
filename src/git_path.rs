@@ -25,7 +25,18 @@ impl<'a> GitPath<'a> {
     /// is allowed in a `tree` object in that we allow `/` characters to build
     /// hierarchical paths.
     pub fn new(path: &'a [u8]) -> Result<GitPath<'a>, GitPathError> {
-        match check_path(path, false, false) {
+        GitPath::new_with_platform_checks(path, false, false)
+    }
+
+    /// Convert the provided byte vector to a `GitPath` struct if it is acceptable
+    /// as a git path. In addition to the typical constraints enforced via `new()`,
+    /// also check platform-specific rules.
+    pub fn new_with_platform_checks(
+        path: &'a [u8],
+        windows: bool,
+        mac: bool,
+    ) -> Result<GitPath<'a>, GitPathError> {
+        match check_path(path, windows, mac) {
             Ok(()) => Ok(GitPath { path }),
             Err(err) => Err(err),
         }
