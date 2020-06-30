@@ -18,6 +18,7 @@ pub enum GitPathError {
     ReservedName,
     ContainsNull,
     ContainsInvalidWindowsCharacters,
+    InvalidWindowsNameEnding,
     ContainsIgnorableUnicodeCharacters,
     ContainsIncompleteUnicodeCharacters,
 }
@@ -105,7 +106,8 @@ fn check_segment(segment: &[u8], platforms: &CheckPlatforms) -> Result<(), GitPa
         check_windows_git_name(segment)?;
 
         if platforms.windows {
-            check_windows_special_characters(segment)?
+            check_windows_special_characters(segment)?;
+            check_windows_segment_ending(segment)?;
         }
 
         if platforms.mac {
@@ -200,6 +202,14 @@ fn check_windows_special_characters(segment: &[u8]) -> Result<(), GitPathError> 
     }
 
     Ok(())
+}
+
+fn check_windows_segment_ending(segment: &[u8]) -> Result<(), GitPathError> {
+    if segment.ends_with(b".") || segment.ends_with(b" ") {
+        Err(GitPathError::InvalidWindowsNameEnding)
+    } else {
+        Ok(())
+    }
 }
 
 fn check_git_path_with_mac_ignorables(segment: &[u8]) -> Result<(), GitPathError> {
@@ -468,6 +478,41 @@ mod tests {
                 windows: true
             }
         )
+    }
+
+    #[test]
+    fn invalid_windows_name_ending() {
+        let name = b"abc.";
+        let a = GitPath::new(name).unwrap();
+        assert_eq!(&a.path(), name);
+
+        assert_eq!(
+            GitPath::new_with_platform_checks(
+                name,
+                &CheckPlatforms {
+                    windows: true,
+                    mac: false
+                }
+            )
+            .unwrap_err(),
+            GitPathError::InvalidWindowsNameEnding
+        );
+
+        let name = b"abc ";
+        let a = GitPath::new(name).unwrap();
+        assert_eq!(&a.path(), name);
+
+        assert_eq!(
+            GitPath::new_with_platform_checks(
+                name,
+                &CheckPlatforms {
+                    windows: true,
+                    mac: false
+                }
+            )
+            .unwrap_err(),
+            GitPathError::InvalidWindowsNameEnding
+        );
     }
 
     const MAC_HFS_GIT_NAMES: [&str; 16] = [
