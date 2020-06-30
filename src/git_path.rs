@@ -307,6 +307,21 @@ mod tests {
                 GitPathError::InvalidWindowsCharacter
             );
         }
+
+        for n in &INVALID_WINDOWS_PATHS {
+            let mut name: Vec<u8> = Vec::new();
+            name.push(b'a');
+            name.extend_from_slice(n);
+            name.push(b'b');
+
+            let a = GitPath::new(&name).unwrap();
+            assert_eq!(a.path(), name.as_slice());
+
+            assert_eq!(
+                GitPath::new_with_platform_checks(&name, true, false).unwrap_err(),
+                GitPathError::InvalidWindowsCharacter
+            );
+        }
     }
 
     const MAC_HFS_GIT_NAMES: [&str; 16] = [
