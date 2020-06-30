@@ -75,6 +75,7 @@ fn check_segment(segment: &[u8], windows: bool, mac: bool) -> Result<(), GitPath
     } else if segment.contains(&0) {
         Err(GitPathError::ContainsNull)
     } else {
+        check_git_reserved_name(segment)?;
         check_windows_git_name(segment)?;
 
         if windows {
@@ -86,6 +87,53 @@ fn check_segment(segment: &[u8], windows: bool, mac: bool) -> Result<(), GitPath
         }
         // TO DO: Way more to check here.
         Ok(())
+    }
+}
+
+fn check_git_reserved_name(segment: &[u8]) -> Result<(), GitPathError> {
+    let reserved = match segment {
+        b"." => true,
+        b".." => true,
+        b".git" => true,
+        _ => is_normalized_git(segment),
+    };
+
+    if reserved {
+        Err(GitPathError::ReservedName)
+    } else {
+        Ok(())
+    }
+}
+
+fn is_normalized_git(segment: &[u8]) -> bool {
+    if segment.len() < 4 {
+        return false;
+    }
+
+    if segment[0] != b'.' {
+        return false;
+    }
+
+    if segment[1] != b'G' && segment[1] != b'g' {
+        return false;
+    }
+
+    if segment[2] != b'I' && segment[2] != b'i' {
+        return false;
+    }
+
+    if segment[3] != b'T' && segment[3] != b't' {
+        return false;
+    }
+
+    match &segment[4..] {
+        b"" => true,
+        b" " => true,
+        b"." => true,
+        b". " => true,
+        b" ." => true,
+        b" . " => true,
+        _ => false,
     }
 }
 
@@ -258,6 +306,31 @@ mod tests {
             GitPath::new(b"ab/cd/ef/").unwrap_err(),
             GitPathError::TrailingSlash
         );
+    }
+
+    const GIT_RESERVED_NAMES: [&[u8]; 11] = [
+        b".", b"..", b".git", b".git.", b".git ", b".git. ", b".git . ", b".Git", b".gIt", b".giT",
+        b".giT.",
+    ];
+
+    const ALMOST_GIT_RESERVED_NAMES: [&[u8]; 5] = [
+        b".git..",
+        b".gitfoobar",
+        b".gitfoo bar",
+        b".gitfoobar.",
+        b".gitfoobar..",
+    ];
+
+    #[test]
+    fn git_reserved_names() {
+        for name in &GIT_RESERVED_NAMES {
+            assert_eq!(GitPath::new(name).unwrap_err(), GitPathError::ReservedName);
+        }
+
+        for name in &ALMOST_GIT_RESERVED_NAMES {
+            let a = GitPath::new(name).unwrap();
+            assert_eq!(&a.path(), name);
+        }
     }
 
     const WINDOWS_GIT_NAMES: [&[u8]; 2] = [b"GIT~1", b"GiT~1"];
