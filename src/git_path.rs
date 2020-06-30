@@ -5,8 +5,7 @@ use std::result::Result;
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct GitPath<'a> {
     path: &'a [u8],
-    // windows: bool,
-    // mac: bool,
+    checked_platforms: CheckPlatforms,
 }
 
 /// Reasons why a given byte sequence can not be accepted as a git repo path.
@@ -22,13 +21,26 @@ pub enum GitPathError {
     ContainsInvalidWindowsCharacter,
 }
 
+/// Which platform's OS conventions should be checked?
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct CheckPlatforms {
+    pub windows: bool,
+    pub mac: bool,
+}
+
 impl<'a> GitPath<'a> {
     /// Convert the provided byte vector to a `GitPath` struct if it is acceptable
     /// as a git path. The rules enforced here are slightly different from what
     /// is allowed in a `tree` object in that we allow `/` characters to build
     /// hierarchical paths.
     pub fn new(path: &'a [u8]) -> Result<GitPath<'a>, GitPathError> {
-        GitPath::new_with_platform_checks(path, false, false)
+        GitPath::new_with_platform_checks(
+            path,
+            &CheckPlatforms {
+                windows: false,
+                mac: false,
+            },
+        )
     }
 
     /// Convert the provided byte vector to a `GitPath` struct if it is acceptable
@@ -36,22 +48,29 @@ impl<'a> GitPath<'a> {
     /// also check platform-specific rules.
     pub fn new_with_platform_checks(
         path: &'a [u8],
-        windows: bool,
-        mac: bool,
+        platforms: &CheckPlatforms,
     ) -> Result<GitPath<'a>, GitPathError> {
-        match check_path(path, windows, mac) {
-            Ok(()) => Ok(GitPath { path }),
+        match check_path(path, platforms) {
+            Ok(()) => Ok(GitPath {
+                path,
+                checked_platforms: platforms.clone(),
+            }),
             Err(err) => Err(err),
         }
     }
 
-    // Return the path.
+    /// Return the path.
     pub fn path(&self) -> &[u8] {
         self.path
     }
+
+    /// Return which platforms were checked for this path.
+    pub fn checked_platforms(&self) -> &CheckPlatforms {
+        &self.checked_platforms
+    }
 }
 
-fn check_path(path: &[u8], windows: bool, mac: bool) -> Result<(), GitPathError> {
+fn check_path(path: &[u8], platforms: &CheckPlatforms) -> Result<(), GitPathError> {
     if path.is_empty() {
         Err(GitPathError::EmptyPath)
     } else if path.starts_with(b"/") {
@@ -60,7 +79,7 @@ fn check_path(path: &[u8], windows: bool, mac: bool) -> Result<(), GitPathError>
         Err(GitPathError::TrailingSlash)
     } else {
         for segment in path.split(|c| *c == 47) {
-            match check_segment(segment, windows, mac) {
+            match check_segment(segment, platforms) {
                 Err(GitPathError::EmptyPath) => Err(GitPathError::DuplicateSlash),
                 x => x,
             }?;
@@ -69,7 +88,7 @@ fn check_path(path: &[u8], windows: bool, mac: bool) -> Result<(), GitPathError>
     }
 }
 
-fn check_segment(segment: &[u8], windows: bool, mac: bool) -> Result<(), GitPathError> {
+fn check_segment(segment: &[u8], platforms: &CheckPlatforms) -> Result<(), GitPathError> {
     if segment.is_empty() {
         Err(GitPathError::EmptyPath)
     } else if segment.contains(&0) {
@@ -78,11 +97,11 @@ fn check_segment(segment: &[u8], windows: bool, mac: bool) -> Result<(), GitPath
         check_git_reserved_name(segment)?;
         check_windows_git_name(segment)?;
 
-        if windows {
+        if platforms.windows {
             check_windows_special_characters(segment)?
         }
 
-        if mac {
+        if platforms.mac {
             check_git_path_with_mac_ignorables(segment)?;
         }
         // TO DO: Way more to check here.
@@ -274,6 +293,13 @@ mod tests {
 
         let a = GitPath::new(b"a").unwrap();
         assert_eq!(a.path(), b"a");
+        assert_eq!(
+            a.checked_platforms(),
+            &CheckPlatforms {
+                mac: false,
+                windows: false
+            }
+        );
 
         let a = GitPath::new(b"a/b").unwrap();
         assert_eq!(a.path(), b"a/b");
@@ -375,7 +401,14 @@ mod tests {
             assert_eq!(&a.path(), name);
 
             assert_eq!(
-                GitPath::new_with_platform_checks(name, true, false).unwrap_err(),
+                GitPath::new_with_platform_checks(
+                    name,
+                    &CheckPlatforms {
+                        windows: true,
+                        mac: false
+                    }
+                )
+                .unwrap_err(),
                 GitPathError::ContainsInvalidWindowsCharacter
             );
         }
@@ -390,13 +423,34 @@ mod tests {
             assert_eq!(a.path(), name.as_slice());
 
             assert_eq!(
-                GitPath::new_with_platform_checks(&name, true, false).unwrap_err(),
+                GitPath::new_with_platform_checks(
+                    &name,
+                    &CheckPlatforms {
+                        windows: true,
+                        mac: false
+                    }
+                )
+                .unwrap_err(),
                 GitPathError::ContainsInvalidWindowsCharacter
             );
         }
 
-        let a = GitPath::new_with_platform_checks(b"ab/cd/ef", true, false).unwrap();
+        let a = GitPath::new_with_platform_checks(
+            b"ab/cd/ef",
+            &CheckPlatforms {
+                windows: true,
+                mac: false,
+            },
+        )
+        .unwrap();
         assert_eq!(a.path(), b"ab/cd/ef");
+        assert_eq!(
+            a.checked_platforms(),
+            &CheckPlatforms {
+                mac: false,
+                windows: true
+            }
+        )
     }
 
     const MAC_HFS_GIT_NAMES: [&str; 16] = [
@@ -429,7 +483,14 @@ mod tests {
             assert_eq!(&a.path(), &name);
 
             assert_eq!(
-                GitPath::new_with_platform_checks(name, false, true).unwrap_err(),
+                GitPath::new_with_platform_checks(
+                    name,
+                    &CheckPlatforms {
+                        windows: false,
+                        mac: true
+                    }
+                )
+                .unwrap_err(),
                 GitPathError::ContainsIgnorableUnicodeCharacters
             );
         }
@@ -440,8 +501,22 @@ mod tests {
             let a = GitPath::new(name).unwrap();
             assert_eq!(&a.path(), &name);
 
-            let a = GitPath::new_with_platform_checks(name, false, true).unwrap();
+            let a = GitPath::new_with_platform_checks(
+                name,
+                &CheckPlatforms {
+                    windows: false,
+                    mac: true,
+                },
+            )
+            .unwrap();
             assert_eq!(&a.path(), &name);
+            assert_eq!(
+                a.checked_platforms(),
+                &CheckPlatforms {
+                    mac: true,
+                    windows: false
+                }
+            )
         }
     }
 }
