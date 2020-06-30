@@ -19,6 +19,7 @@ pub enum GitPathError {
     ContainsNull,
     DotGit,
     ContainsIgnorableUnicodeCharacters,
+    InvalidWindowsCharacter,
 }
 
 impl<'a> GitPath<'a> {
@@ -68,13 +69,17 @@ fn check_path(path: &[u8], windows: bool, mac: bool) -> Result<(), GitPathError>
     }
 }
 
-fn check_segment(segment: &[u8], _windows: bool, mac: bool) -> Result<(), GitPathError> {
+fn check_segment(segment: &[u8], windows: bool, mac: bool) -> Result<(), GitPathError> {
     if segment.is_empty() {
         Err(GitPathError::EmptyPath)
     } else if segment.contains(&0) {
         Err(GitPathError::ContainsNull)
     } else {
         check_windows_git_name(segment)?;
+
+        if windows {
+            check_windows_special_characters(segment)?
+        }
 
         if mac {
             check_git_path_with_mac_ignorables(segment)?;
@@ -97,6 +102,29 @@ fn check_windows_git_name(segment: &[u8]) -> Result<(), GitPathError> {
     } else {
         Ok(())
     }
+}
+
+fn check_windows_special_characters(segment: &[u8]) -> Result<(), GitPathError> {
+    for c in segment {
+        let invalid = match c {
+            b'"' => true,
+            b'*' => true,
+            b':' => true,
+            b'<' => true,
+            b'>' => true,
+            b'?' => true,
+            b'\\' => true,
+            b'|' => true,
+            0..=31 => true,
+            _ => false,
+        };
+
+        if invalid {
+            return Err(GitPathError::InvalidWindowsCharacter);
+        }
+    }
+
+    Ok(())
 }
 
 fn check_git_path_with_mac_ignorables(segment: &[u8]) -> Result<(), GitPathError> {
@@ -248,6 +276,36 @@ mod tests {
         for name in &ALMOST_WINDOWS_GIT_NAMES {
             let a = GitPath::new(name).unwrap();
             assert_eq!(&a.path(), name);
+        }
+    }
+
+    const INVALID_WINDOWS_PATHS: [&[u8]; 14] = [
+        b"\"",
+        b"*",
+        b":",
+        b"<",
+        b">",
+        b"?",
+        b"\\",
+        b"|",
+        &[1],
+        &[2],
+        &[3],
+        &[4],
+        &[7],
+        &[31],
+    ];
+
+    #[test]
+    fn invalid_windows_characters() {
+        for name in &INVALID_WINDOWS_PATHS {
+            let a = GitPath::new(name).unwrap();
+            assert_eq!(&a.path(), name);
+
+            assert_eq!(
+                GitPath::new_with_platform_checks(name, true, false).unwrap_err(),
+                GitPathError::InvalidWindowsCharacter
+            );
         }
     }
 
