@@ -313,7 +313,8 @@ mod tests {
         b".giT.",
     ];
 
-    const ALMOST_GIT_RESERVED_NAMES: [&[u8]; 5] = [
+    const ALMOST_GIT_RESERVED_NAMES: [&[u8]; 6] = [
+        b".gxt",
         b".git..",
         b".gitfoobar",
         b".gitfoo bar",
