@@ -207,9 +207,7 @@ fn match_mac_hfs_path_inner(segment: &[u8], m: &[u8]) -> bool {
             }
         }
 
-        if m.is_empty() {
-            false
-        } else if segment.first() != m.first() {
+        if m.is_empty() || segment.first() != m.first() {
             false
         } else {
             match_mac_hfs_path_inner(&segment[1..], &m[1..])
