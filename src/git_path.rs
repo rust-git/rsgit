@@ -19,6 +19,7 @@ pub enum GitPathError {
     ContainsNull,
     ContainsIgnorableUnicodeCharacters,
     ContainsInvalidWindowsCharacter,
+    ContainsIncompleteUnicodeCharacters,
 }
 
 /// Which platform's OS conventions should be checked?
@@ -103,6 +104,7 @@ fn check_segment(segment: &[u8], platforms: &CheckPlatforms) -> Result<(), GitPa
 
         if platforms.mac {
             check_git_path_with_mac_ignorables(segment)?;
+            check_truncated_utf8_for_mac(segment)?
         }
         // TO DO: Way more to check here.
         Ok(())
@@ -197,6 +199,15 @@ fn check_windows_special_characters(segment: &[u8]) -> Result<(), GitPathError> 
 fn check_git_path_with_mac_ignorables(segment: &[u8]) -> Result<(), GitPathError> {
     if match_mac_hfs_path(segment, b".git") {
         Err(GitPathError::ContainsIgnorableUnicodeCharacters)
+    } else {
+        Ok(())
+    }
+}
+
+fn check_truncated_utf8_for_mac(segment: &[u8]) -> Result<(), GitPathError> {
+    let tail3 = &segment[0.max(segment.len() - 2)..];
+    if tail3.contains(&0xE2) || tail3.contains(&0xEF) {
+        Err(GitPathError::ContainsIncompleteUnicodeCharacters)
     } else {
         Ok(())
     }
@@ -518,5 +529,32 @@ mod tests {
                 }
             )
         }
+    }
+
+    #[test]
+    fn mac_badly_formed_utf8() {
+        assert_eq!(
+            GitPath::new_with_platform_checks(
+                &[97, 98, 0xE2, 0x80],
+                &CheckPlatforms {
+                    mac: true,
+                    windows: false
+                }
+            )
+            .unwrap_err(),
+            GitPathError::ContainsIncompleteUnicodeCharacters
+        );
+
+        assert_eq!(
+            GitPath::new_with_platform_checks(
+                &[97, 98, 0xEF, 0x80],
+                &CheckPlatforms {
+                    mac: true,
+                    windows: false
+                }
+            )
+            .unwrap_err(),
+            GitPathError::ContainsIncompleteUnicodeCharacters
+        );
     }
 }
