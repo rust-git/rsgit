@@ -19,6 +19,7 @@ pub enum GitPathError {
     ContainsNull,
     ContainsInvalidWindowsCharacters,
     InvalidWindowsNameEnding,
+    ReservedWindowsDeviceName,
     ContainsIgnorableUnicodeCharacters,
     ContainsIncompleteUnicodeCharacters,
 }
@@ -108,6 +109,7 @@ fn check_segment(segment: &[u8], platforms: &CheckPlatforms) -> Result<(), GitPa
         if platforms.windows {
             check_windows_special_characters(segment)?;
             check_windows_segment_ending(segment)?;
+            check_windows_device_name(segment)?;
         }
 
         if platforms.mac {
@@ -209,6 +211,47 @@ fn check_windows_segment_ending(segment: &[u8]) -> Result<(), GitPathError> {
         Err(GitPathError::InvalidWindowsNameEnding)
     } else {
         Ok(())
+    }
+}
+
+fn check_windows_device_name(segment: &[u8]) -> Result<(), GitPathError> {
+    match segment.split(|c| *c == b'.').next() {
+        Some(before_dot) => {
+            let illegal = match before_dot.len() {
+                3 => {
+                    let mut name: [u8; 3] = [0; 3];
+                    name.clone_from_slice(before_dot);
+                    name.make_ascii_lowercase();
+                    match &name {
+                        b"aux" => true,
+                        b"con" => true,
+                        b"nul" => true,
+                        b"prn" => true,
+                        _ => false,
+                    }
+                }
+                4 => {
+                    let mut name: [u8; 3] = [0; 3];
+                    name.clone_from_slice(&before_dot[0..3]);
+                    name.make_ascii_lowercase();
+                    let illegal = match &name {
+                        b"com" => true,
+                        b"lpt" => true,
+                        _ => false,
+                    };
+                    let digit = before_dot[3];
+                    illegal && digit >= b'1' && digit <= b'9'
+                }
+                _ => false,
+            };
+
+            if illegal {
+                Err(GitPathError::ReservedWindowsDeviceName)
+            } else {
+                Ok(())
+            }
+        }
+        _ => Ok(()),
     }
 }
 
@@ -513,6 +556,48 @@ mod tests {
             .unwrap_err(),
             GitPathError::InvalidWindowsNameEnding
         );
+    }
+
+    const WINDOWS_DEVICE_NAMES: [&[u8]; 8] = [
+        b"aux", b"con", b"com1", b"com7", b"lpt1", b"lpt3", b"nul", b"prn",
+    ];
+    const ALMOST_WINDOWS_DEVICE_NAMES: [&[u8]; 6] =
+        [b"aub", b"con1", b"com", b"lpt", b"nul3", b"prn8"];
+
+    #[test]
+    fn invalid_windows_device_names() {
+        for name in &WINDOWS_DEVICE_NAMES {
+            let a = GitPath::new(name).unwrap();
+            assert_eq!(&a.path(), name);
+
+            assert_eq!(
+                GitPath::new_with_platform_checks(
+                    name,
+                    &CheckPlatforms {
+                        windows: true,
+                        mac: false
+                    }
+                )
+                .unwrap_err(),
+                GitPathError::ReservedWindowsDeviceName
+            );
+        }
+
+        for name in &ALMOST_WINDOWS_DEVICE_NAMES {
+            let a = GitPath::new(name).unwrap();
+            assert_eq!(&a.path(), name);
+
+            let a = GitPath::new_with_platform_checks(
+                &name,
+                &CheckPlatforms {
+                    windows: true,
+                    mac: false,
+                },
+            )
+            .unwrap();
+
+            assert_eq!(&a.path(), name);
+        }
     }
 
     const MAC_HFS_GIT_NAMES: [&str; 16] = [
