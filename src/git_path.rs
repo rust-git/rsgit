@@ -16,10 +16,10 @@ pub enum GitPathError {
     AbsolutePath,
     TrailingSlash,
     DuplicateSlash,
+    ReservedName,
     ContainsNull,
-    DotGit,
     ContainsIgnorableUnicodeCharacters,
-    InvalidWindowsCharacter,
+    ContainsInvalidWindowsCharacter,
 }
 
 impl<'a> GitPath<'a> {
@@ -95,7 +95,7 @@ fn check_windows_git_name(segment: &[u8]) -> Result<(), GitPathError> {
         segment_lc.clone_from_slice(segment);
         segment_lc.make_ascii_lowercase();
         if &segment_lc == b"git~1" {
-            Err(GitPathError::DotGit)
+            Err(GitPathError::ReservedName)
         } else {
             Ok(())
         }
@@ -120,7 +120,7 @@ fn check_windows_special_characters(segment: &[u8]) -> Result<(), GitPathError> 
         };
 
         if invalid {
-            return Err(GitPathError::InvalidWindowsCharacter);
+            return Err(GitPathError::ContainsInvalidWindowsCharacter);
         }
     }
 
@@ -268,7 +268,7 @@ mod tests {
         // This constraint applies to all platforms, since a ".git"-like name
         // on *any* platform will cause problems when moving to Windows.
         for name in &WINDOWS_GIT_NAMES {
-            assert_eq!(GitPath::new(name).unwrap_err(), GitPathError::DotGit);
+            assert_eq!(GitPath::new(name).unwrap_err(), GitPathError::ReservedName);
         }
 
         for name in &ALMOST_WINDOWS_GIT_NAMES {
@@ -302,7 +302,7 @@ mod tests {
 
             assert_eq!(
                 GitPath::new_with_platform_checks(name, true, false).unwrap_err(),
-                GitPathError::InvalidWindowsCharacter
+                GitPathError::ContainsInvalidWindowsCharacter
             );
         }
 
@@ -317,7 +317,7 @@ mod tests {
 
             assert_eq!(
                 GitPath::new_with_platform_checks(&name, true, false).unwrap_err(),
-                GitPathError::InvalidWindowsCharacter
+                GitPathError::ContainsInvalidWindowsCharacter
             );
         }
 
