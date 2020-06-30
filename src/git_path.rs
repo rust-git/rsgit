@@ -18,6 +18,7 @@ pub enum GitPathError {
     DuplicateSlash,
     ContainsNull,
     DotGit,
+    ContainsIgnorableUnicodeCharacters,
 }
 
 impl<'a> GitPath<'a> {
@@ -67,7 +68,7 @@ fn check_path(path: &[u8], windows: bool, mac: bool) -> Result<(), GitPathError>
     }
 }
 
-fn check_segment(segment: &[u8], _windows: bool, _mac: bool) -> Result<(), GitPathError> {
+fn check_segment(segment: &[u8], _windows: bool, mac: bool) -> Result<(), GitPathError> {
     if segment.is_empty() {
         Err(GitPathError::EmptyPath)
     } else if segment.contains(&0) {
@@ -75,6 +76,9 @@ fn check_segment(segment: &[u8], _windows: bool, _mac: bool) -> Result<(), GitPa
     } else {
         check_windows_git_name(segment)?;
 
+        if mac {
+            check_git_path_with_mac_ignorables(segment)?;
+        }
         // TO DO: Way more to check here.
         Ok(())
     }
@@ -92,6 +96,96 @@ fn check_windows_git_name(segment: &[u8]) -> Result<(), GitPathError> {
         }
     } else {
         Ok(())
+    }
+}
+
+fn check_git_path_with_mac_ignorables(segment: &[u8]) -> Result<(), GitPathError> {
+    if match_mac_hfs_path(segment, b".git") {
+        Err(GitPathError::ContainsIgnorableUnicodeCharacters)
+    } else {
+        Ok(())
+    }
+}
+
+fn match_mac_hfs_path(segment: &[u8], m: &[u8]) -> bool {
+    if segment == m {
+        true
+    } else {
+        match_mac_hfs_path_inner(segment, m)
+    }
+}
+
+fn match_mac_hfs_path_inner(segment: &[u8], m: &[u8]) -> bool {
+    if segment.is_empty() && m.is_empty() {
+        true
+    } else if segment.is_empty() {
+        false
+    } else {
+        if segment.len() >= 3 {
+            let ignorable_char = match segment[0..3] {
+                // U+200C 0xe2808c ZERO WIDTH NON-JOINER
+                [0xE2, 0x80, 0x8C] => true,
+
+                // U+200D 0xe2808d ZERO WIDTH JOINER
+                [0xE2, 0x80, 0x8D] => true,
+
+                // U+200E 0xe2808e LEFT-TO-RIGHT MARK
+                [0xE2, 0x80, 0x8E] => true,
+
+                // U+200F 0xe2808f RIGHT-TO-LEFT MARK
+                [0xE2, 0x80, 0x8F] => true,
+
+                // U+202A 0xe280aa LEFT-TO-RIGHT EMBEDDING
+                [0xE2, 0x80, 0xAA] => true,
+
+                // U+202B 0xe280ab RIGHT-TO-LEFT EMBEDDING
+                [0xE2, 0x80, 0xAB] => true,
+
+                // U+202C 0xe280ac POP DIRECTIONAL FORMATTING
+                [0xE2, 0x80, 0xAC] => true,
+
+                // U+202D 0xe280ad LEFT-TO-RIGHT OVERRIDE
+                [0xE2, 0x80, 0xAD] => true,
+
+                // U+202E 0xe280ae RIGHT-TO-LEFT OVERRIDE
+                [0xE2, 0x80, 0xAE] => true,
+
+                // U+206A 0xe281aa INHIBIT SYMMETRIC SWAPPING
+                [0xE2, 0x81, 0xAA] => true,
+
+                // U+206B 0xe281ab ACTIVATE SYMMETRIC SWAPPING
+                [0xE2, 0x81, 0xAB] => true,
+
+                // U+206C 0xe281ac INHIBIT ARABIC FORM SHAPING
+                [0xE2, 0x81, 0xAC] => true,
+
+                // U+206D 0xe281ad ACTIVATE ARABIC FORM SHAPING
+                [0xE2, 0x81, 0xAD] => true,
+
+                // U+206E 0xe281ae NATIONAL DIGIT SHAPES
+                [0xE2, 0x81, 0xAE] => true,
+
+                // U+206F 0xe281af NOMINAL DIGIT SHAPES
+                [0xE2, 0x81, 0xAF] => true,
+
+                // U+FEFF 0xefbbbf BYTE ORDER MARK
+                [0xEF, 0xBB, 0xBF] => true,
+
+                _ => false,
+            };
+
+            if ignorable_char {
+                return match_mac_hfs_path_inner(&segment[3..], m);
+            }
+        }
+
+        if m.is_empty() {
+            false
+        } else if segment.first() != m.first() {
+            false
+        } else {
+            match_mac_hfs_path_inner(&segment[1..], &m[1..])
+        }
     }
 }
 
@@ -144,7 +238,7 @@ mod tests {
     const ALMOST_WINDOWS_GIT_NAMES: [&[u8]; 2] = [b"GIT~11", b"GIT~2"];
 
     #[test]
-    fn windows_variations_on_git_name() {
+    fn windows_variations_on_dot_git_name() {
         // This constraint applies to all platforms, since a ".git"-like name
         // on *any* platform will cause problems when moving to Windows.
         for name in &WINDOWS_GIT_NAMES {
@@ -154,6 +248,52 @@ mod tests {
         for name in &ALMOST_WINDOWS_GIT_NAMES {
             let a = GitPath::new(name).unwrap();
             assert_eq!(&a.path(), name);
+        }
+    }
+
+    const MAC_HFS_GIT_NAMES: [&str; 16] = [
+        ".gi\u{200C}t",
+        ".gi\u{200D}t",
+        ".gi\u{200E}t",
+        ".gi\u{200F}t",
+        ".gi\u{202A}t",
+        ".gi\u{202B}t",
+        ".gi\u{202C}t",
+        ".gi\u{202D}t",
+        ".gi\u{202E}t",
+        ".gi\u{206A}t",
+        "\u{206B}.git",
+        "\u{206C}.git",
+        "\u{206D}.git",
+        "\u{206E}.git",
+        "\u{206F}.git",
+        ".git\u{FEFF}",
+    ];
+
+    const ALMOST_MAC_HFS_GIT_NAMES: [&str; 2] = [".git\u{200C}x", ".kit\u{200C}"];
+
+    #[test]
+    fn mac_variations_on_dot_git_name() {
+        for name in &MAC_HFS_GIT_NAMES {
+            let name = name.as_bytes();
+
+            let a = GitPath::new(name).unwrap();
+            assert_eq!(&a.path(), &name);
+
+            assert_eq!(
+                GitPath::new_with_platform_checks(name, false, true).unwrap_err(),
+                GitPathError::ContainsIgnorableUnicodeCharacters
+            );
+        }
+
+        for name in &ALMOST_MAC_HFS_GIT_NAMES {
+            let name = name.as_bytes();
+
+            let a = GitPath::new(name).unwrap();
+            assert_eq!(&a.path(), &name);
+
+            let a = GitPath::new_with_platform_checks(name, false, true).unwrap();
+            assert_eq!(&a.path(), &name);
         }
     }
 }
