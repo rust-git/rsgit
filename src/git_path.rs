@@ -17,8 +17,8 @@ pub enum GitPathError {
     DuplicateSlash,
     ReservedName,
     ContainsNull,
+    ContainsInvalidWindowsCharacters,
     ContainsIgnorableUnicodeCharacters,
-    ContainsInvalidWindowsCharacter,
     ContainsIncompleteUnicodeCharacters,
 }
 
@@ -195,7 +195,7 @@ fn check_windows_special_characters(segment: &[u8]) -> Result<(), GitPathError> 
         };
 
         if invalid {
-            return Err(GitPathError::ContainsInvalidWindowsCharacter);
+            return Err(GitPathError::ContainsInvalidWindowsCharacters);
         }
     }
 
@@ -426,7 +426,7 @@ mod tests {
                     }
                 )
                 .unwrap_err(),
-                GitPathError::ContainsInvalidWindowsCharacter
+                GitPathError::ContainsInvalidWindowsCharacters
             );
         }
 
@@ -448,7 +448,7 @@ mod tests {
                     }
                 )
                 .unwrap_err(),
-                GitPathError::ContainsInvalidWindowsCharacter
+                GitPathError::ContainsInvalidWindowsCharacters
             );
         }
 
