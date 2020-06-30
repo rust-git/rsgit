@@ -17,6 +17,7 @@ pub enum GitPathError {
     TrailingSlash,
     DuplicateSlash,
     ContainsNull,
+    DotGit,
 }
 
 impl<'a> GitPath<'a> {
@@ -72,7 +73,24 @@ fn check_segment(segment: &[u8], _windows: bool, _mac: bool) -> Result<(), GitPa
     } else if segment.contains(&0) {
         Err(GitPathError::ContainsNull)
     } else {
+        check_windows_git_name(segment)?;
+
         // TO DO: Way more to check here.
+        Ok(())
+    }
+}
+
+fn check_windows_git_name(segment: &[u8]) -> Result<(), GitPathError> {
+    if segment.len() == 5 {
+        let mut segment_lc: [u8; 5] = [0u8; 5];
+        segment_lc.clone_from_slice(segment);
+        segment_lc.make_ascii_lowercase();
+        if &segment_lc == b"git~1" {
+            Err(GitPathError::DotGit)
+        } else {
+            Ok(())
+        }
+    } else {
         Ok(())
     }
 }
@@ -120,5 +138,22 @@ mod tests {
             GitPath::new(b"ab/cd/ef/").unwrap_err(),
             GitPathError::TrailingSlash
         );
+    }
+
+    const WINDOWS_GIT_NAMES: [&[u8]; 2] = [b"GIT~1", b"GiT~1"];
+    const ALMOST_WINDOWS_GIT_NAMES: [&[u8]; 2] = [b"GIT~11", b"GIT~2"];
+
+    #[test]
+    fn windows_variations_on_git_name() {
+        // This constraint applies to all platforms, since a ".git"-like name
+        // on *any* platform will cause problems when moving to Windows.
+        for name in &WINDOWS_GIT_NAMES {
+            assert_eq!(GitPath::new(name).unwrap_err(), GitPathError::DotGit);
+        }
+
+        for name in &ALMOST_WINDOWS_GIT_NAMES {
+            let a = GitPath::new(name).unwrap();
+            assert_eq!(&a.path(), name);
+        }
     }
 }
