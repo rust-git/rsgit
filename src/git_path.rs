@@ -270,7 +270,7 @@ mod tests {
         ".git\u{FEFF}",
     ];
 
-    const ALMOST_MAC_HFS_GIT_NAMES: [&str; 2] = [".git\u{200C}x", ".kit\u{200C}"];
+    const ALMOST_MAC_HFS_GIT_NAMES: [&str; 3] = [".gi", ".git\u{200C}x", ".kit\u{200C}"];
 
     #[test]
     fn mac_variations_on_dot_git_name() {
