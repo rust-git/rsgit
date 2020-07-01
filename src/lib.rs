@@ -14,6 +14,7 @@ mod git_path;
 pub use git_path::CheckPlatforms;
 pub use git_path::GitPath;
 pub use git_path::GitPathError;
+pub use git_path::GitPathSegment;
 
 mod object;
 pub use object::Object;
