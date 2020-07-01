@@ -8,6 +8,15 @@ pub struct GitPath<'a> {
     checked_platforms: CheckPlatforms,
 }
 
+/// Represents a list of bytes (typically, but not necessarily UTF-8)
+/// that is a valid path *segment* in a git repo. (Unlike `GitPath`,
+/// a `GitPathSegment` may not contain a `/` character.)
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct GitPathSegment<'a> {
+    path: &'a [u8],
+    checked_platforms: CheckPlatforms,
+}
+
 /// Reasons why a given byte sequence can not be accepted as a git repo path.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum GitPathError {
@@ -15,6 +24,7 @@ pub enum GitPathError {
     AbsolutePath,
     TrailingSlash,
     DuplicateSlash,
+    ContainsSlash,
     ReservedName,
     ContainsNull,
     ContainsInvalidWindowsCharacters,
@@ -79,6 +89,53 @@ impl<'a> GitPath<'a> {
     }
 }
 
+impl<'a> GitPathSegment<'a> {
+    /// Convert the provided byte vector to a `GitPathSegment` struct if it is
+    /// acceptable as a git path segment. Similarly to a `tree` object, we do not
+    /// allow `/` characters.
+    #[cfg_attr(tarpaulin, skip)]
+    pub fn new(path: &'a [u8]) -> Result<GitPathSegment<'a>, GitPathError> {
+        // Argh. `cargo fmt` reformats this into a format that generates
+        // "coverage" for some of the arguments below, but not all.
+        GitPathSegment::new_with_platform_checks(
+            path,
+            &CheckPlatforms {
+                windows: false,
+                mac: false,
+            },
+        )
+    }
+
+    /// Convert the provided byte vector to a `GitPathSegment` struct if it is acceptable
+    /// as a git path. In addition to the typical constraints enforced via `new()`,
+    /// also check platform-specific rules.
+    #[cfg_attr(tarpaulin, skip)]
+    pub fn new_with_platform_checks(
+        path: &'a [u8],
+        platforms: &CheckPlatforms,
+    ) -> Result<GitPathSegment<'a>, GitPathError> {
+        // Argh. `cargo fmt` reformats this into a format that generates
+        // "coverage" for some of the arguments below, but not all.
+        match check_segment(path, platforms) {
+            Ok(()) => Ok(GitPathSegment {
+                path,
+                checked_platforms: platforms.clone(),
+            }),
+            Err(err) => Err(err),
+        }
+    }
+
+    /// Return the path.
+    pub fn path(&self) -> &[u8] {
+        self.path
+    }
+
+    /// Return which platforms were checked for this path.
+    pub fn checked_platforms(&self) -> &CheckPlatforms {
+        &self.checked_platforms
+    }
+}
+
 fn check_path(path: &[u8], platforms: &CheckPlatforms) -> Result<(), GitPathError> {
     if path.is_empty() {
         Err(GitPathError::EmptyPath)
@@ -102,6 +159,8 @@ fn check_segment(segment: &[u8], platforms: &CheckPlatforms) -> Result<(), GitPa
         Err(GitPathError::EmptyPath)
     } else if segment.contains(&0) {
         Err(GitPathError::ContainsNull)
+    } else if segment.contains(&47) {
+        Err(GitPathError::ContainsSlash)
     } else {
         check_git_reserved_name(segment)?;
         check_windows_git_name(segment)?;
@@ -349,7 +408,7 @@ fn match_mac_hfs_path(segment: &[u8], m: &[u8]) -> bool {
 }
 
 #[cfg(test)]
-mod tests {
+mod path_tests {
     use super::*;
 
     #[test]
@@ -747,6 +806,406 @@ mod tests {
 
         assert_eq!(
             GitPath::new_with_platform_checks(
+                bad_name,
+                &CheckPlatforms {
+                    mac: true,
+                    windows: false
+                }
+            )
+            .unwrap_err(),
+            GitPathError::ContainsIncompleteUnicodeCharacters
+        );
+    }
+}
+
+#[cfg(test)]
+mod path_segment_tests {
+    use super::*;
+
+    #[test]
+    fn basic_case() {
+        // No platform-specific checks.
+        assert_eq!(
+            GitPathSegment::new(b"").unwrap_err(),
+            GitPathError::EmptyPath
+        );
+
+        let a = GitPathSegment::new(b"a").unwrap();
+        assert_eq!(a.path(), b"a");
+        assert_eq!(
+            a.checked_platforms(),
+            &CheckPlatforms {
+                mac: false,
+                windows: false
+            }
+        );
+
+        assert_eq!(
+            GitPathSegment::new(b"a/b").unwrap_err(),
+            GitPathError::ContainsSlash
+        );
+
+        assert_eq!(
+            GitPathSegment::new(b"a//b").unwrap_err(),
+            GitPathError::ContainsSlash
+        );
+
+        assert_eq!(
+            GitPathSegment::new(b"/a").unwrap_err(),
+            GitPathError::ContainsSlash
+        );
+
+        assert_eq!(
+            GitPathSegment::new(b"a\0b").unwrap_err(),
+            GitPathError::ContainsNull
+        );
+
+        assert_eq!(
+            GitPathSegment::new(b"a/").unwrap_err(),
+            GitPathError::ContainsSlash
+        );
+        assert_eq!(
+            GitPathSegment::new(b"ab/cd/ef/").unwrap_err(),
+            GitPathError::ContainsSlash
+        );
+    }
+
+    const GIT_RESERVED_NAMES: [&[u8]; 11] = [
+        b".", b"..", b".git", b".git.", b".git ", b".git. ", b".git . ", b".Git", b".gIt", b".giT",
+        b".giT.",
+    ];
+
+    const ALMOST_GIT_RESERVED_NAMES: [&[u8]; 6] = [
+        b".gxt",
+        b".git..",
+        b".gitfoobar",
+        b".gitfoo bar",
+        b".gitfoobar.",
+        b".gitfoobar..",
+    ];
+
+    #[test]
+    fn git_reserved_names() {
+        for name in &GIT_RESERVED_NAMES {
+            assert_eq!(
+                GitPathSegment::new(name).unwrap_err(),
+                GitPathError::ReservedName
+            );
+        }
+
+        for name in &ALMOST_GIT_RESERVED_NAMES {
+            let a = GitPathSegment::new(name).unwrap();
+            assert_eq!(&a.path(), name);
+        }
+    }
+
+    const WINDOWS_GIT_NAMES: [&[u8]; 2] = [b"GIT~1", b"GiT~1"];
+    const ALMOST_WINDOWS_GIT_NAMES: [&[u8]; 2] = [b"GIT~11", b"GIT~2"];
+
+    #[test]
+    fn windows_variations_on_dot_git_name() {
+        // This constraint applies to all platforms, since a ".git"-like name
+        // on *any* platform will cause problems when moving to Windows.
+        for name in &WINDOWS_GIT_NAMES {
+            assert_eq!(
+                GitPathSegment::new(name).unwrap_err(),
+                GitPathError::ReservedName
+            );
+        }
+
+        for name in &ALMOST_WINDOWS_GIT_NAMES {
+            let a = GitPathSegment::new(name).unwrap();
+            assert_eq!(&a.path(), name);
+        }
+    }
+
+    const INVALID_WINDOWS_PATHS: [&[u8]; 14] = [
+        b"\"",
+        b"*",
+        b":",
+        b"<",
+        b">",
+        b"?",
+        b"\\",
+        b"|",
+        &[1],
+        &[2],
+        &[3],
+        &[4],
+        &[7],
+        &[31],
+    ];
+
+    #[test]
+    fn invalid_windows_characters() {
+        for name in &INVALID_WINDOWS_PATHS {
+            let a = GitPathSegment::new(name).unwrap();
+            assert_eq!(&a.path(), name);
+
+            assert_eq!(
+                GitPathSegment::new_with_platform_checks(
+                    name,
+                    &CheckPlatforms {
+                        windows: true,
+                        mac: false
+                    }
+                )
+                .unwrap_err(),
+                GitPathError::ContainsInvalidWindowsCharacters
+            );
+        }
+
+        for n in &INVALID_WINDOWS_PATHS {
+            let mut name: Vec<u8> = Vec::new();
+            name.push(b'a');
+            name.extend_from_slice(n);
+            name.push(b'b');
+
+            let a = GitPathSegment::new(&name).unwrap();
+            assert_eq!(a.path(), name.as_slice());
+
+            assert_eq!(
+                GitPathSegment::new_with_platform_checks(
+                    &name,
+                    &CheckPlatforms {
+                        windows: true,
+                        mac: false
+                    }
+                )
+                .unwrap_err(),
+                GitPathError::ContainsInvalidWindowsCharacters
+            );
+        }
+    }
+
+    #[test]
+    fn invalid_windows_name_ending() {
+        let name = b"abc.";
+        let a = GitPathSegment::new(name).unwrap();
+        assert_eq!(&a.path(), name);
+
+        assert_eq!(
+            GitPathSegment::new_with_platform_checks(
+                name,
+                &CheckPlatforms {
+                    windows: true,
+                    mac: false
+                }
+            )
+            .unwrap_err(),
+            GitPathError::InvalidWindowsNameEnding
+        );
+
+        let name = b"abc ";
+        let a = GitPathSegment::new(name).unwrap();
+        assert_eq!(&a.path(), name);
+
+        assert_eq!(
+            GitPathSegment::new_with_platform_checks(
+                name,
+                &CheckPlatforms {
+                    windows: true,
+                    mac: false
+                }
+            )
+            .unwrap_err(),
+            GitPathError::InvalidWindowsNameEnding
+        );
+    }
+
+    const WINDOWS_DEVICE_NAMES: [&[u8]; 8] = [
+        b"aux", b"con", b"com1", b"com7", b"lpt1", b"lpt3", b"nul", b"prn",
+    ];
+    const ALMOST_WINDOWS_DEVICE_NAMES: [&[u8]; 9] = [
+        b"aub", b"con1", b"com", b"lpt", b"nul3", b"prn8", b"co", b"com12", b"com0",
+    ];
+
+    #[test]
+    fn invalid_windows_device_names() {
+        for name in &WINDOWS_DEVICE_NAMES {
+            let a = GitPathSegment::new(name).unwrap();
+            assert_eq!(&a.path(), name);
+
+            assert_eq!(
+                GitPathSegment::new_with_platform_checks(
+                    name,
+                    &CheckPlatforms {
+                        windows: true,
+                        mac: false
+                    }
+                )
+                .unwrap_err(),
+                GitPathError::ReservedWindowsDeviceName
+            );
+        }
+
+        for name in &ALMOST_WINDOWS_DEVICE_NAMES {
+            let a = GitPathSegment::new(name).unwrap();
+            assert_eq!(&a.path(), name);
+
+            let a = GitPathSegment::new_with_platform_checks(
+                &name,
+                &CheckPlatforms {
+                    windows: true,
+                    mac: false,
+                },
+            )
+            .unwrap();
+
+            assert_eq!(&a.path(), name);
+        }
+    }
+
+    const MAC_HFS_GIT_NAMES: [&str; 16] = [
+        ".gi\u{200C}t",
+        ".gi\u{200D}t",
+        ".gi\u{200E}t",
+        ".gi\u{200F}t",
+        ".gi\u{202A}t",
+        ".gi\u{202B}t",
+        ".gi\u{202C}t",
+        ".gi\u{202D}t",
+        ".gi\u{202E}t",
+        ".gi\u{206A}t",
+        "\u{206B}.git",
+        "\u{206C}.git",
+        "\u{206D}.git",
+        "\u{206E}.git",
+        "\u{206F}.git",
+        ".git\u{FEFF}",
+    ];
+
+    const ALMOST_MAC_HFS_GIT_NAMES: [&str; 3] = [".gi", ".git\u{200C}x", ".kit\u{200C}"];
+
+    #[test]
+    fn mac_variations_on_dot_git_name() {
+        for name in &MAC_HFS_GIT_NAMES {
+            let name = name.as_bytes();
+
+            let a = GitPathSegment::new(name).unwrap();
+            assert_eq!(&a.path(), &name);
+
+            assert_eq!(
+                GitPathSegment::new_with_platform_checks(
+                    name,
+                    &CheckPlatforms {
+                        windows: false,
+                        mac: true
+                    }
+                )
+                .unwrap_err(),
+                GitPathError::ContainsIgnorableUnicodeCharacters
+            );
+        }
+
+        for name in &ALMOST_MAC_HFS_GIT_NAMES {
+            let name = name.as_bytes();
+
+            let a = GitPathSegment::new(name).unwrap();
+            assert_eq!(&a.path(), &name);
+
+            let a = GitPathSegment::new_with_platform_checks(
+                name,
+                &CheckPlatforms {
+                    windows: false,
+                    mac: true,
+                },
+            )
+            .unwrap();
+            assert_eq!(&a.path(), &name);
+            assert_eq!(
+                a.checked_platforms(),
+                &CheckPlatforms {
+                    mac: true,
+                    windows: false
+                }
+            )
+        }
+    }
+
+    #[test]
+    fn mac_badly_formed_utf8() {
+        assert_eq!(
+            GitPathSegment::new_with_platform_checks(
+                &[97, 98, 0xE2, 0x80],
+                &CheckPlatforms {
+                    mac: true,
+                    windows: false
+                }
+            )
+            .unwrap_err(),
+            GitPathError::ContainsIncompleteUnicodeCharacters
+        );
+
+        assert_eq!(
+            GitPathSegment::new_with_platform_checks(
+                &[97, 98, 0xEF, 0x80],
+                &CheckPlatforms {
+                    mac: true,
+                    windows: false
+                }
+            )
+            .unwrap_err(),
+            GitPathError::ContainsIncompleteUnicodeCharacters
+        );
+
+        let name = &[97, 98, 0xE2, 0x80, 0xAE];
+        let a = GitPathSegment::new_with_platform_checks(
+            name,
+            &CheckPlatforms {
+                windows: false,
+                mac: true,
+            },
+        )
+        .unwrap();
+
+        assert_eq!(&a.path(), &name);
+        assert_eq!(
+            a.checked_platforms(),
+            &CheckPlatforms {
+                mac: true,
+                windows: false
+            }
+        );
+
+        let bad_name = b".git\xEF";
+        let a = GitPathSegment::new(bad_name).unwrap();
+
+        assert_eq!(&a.path(), bad_name);
+        assert_eq!(
+            a.checked_platforms(),
+            &CheckPlatforms {
+                mac: false,
+                windows: false
+            }
+        );
+
+        assert_eq!(
+            GitPathSegment::new_with_platform_checks(
+                bad_name,
+                &CheckPlatforms {
+                    mac: true,
+                    windows: false
+                }
+            )
+            .unwrap_err(),
+            GitPathError::ContainsIncompleteUnicodeCharacters
+        );
+
+        let bad_name = b".git\xE2\xAB";
+        let a = GitPathSegment::new(bad_name).unwrap();
+
+        assert_eq!(&a.path(), bad_name);
+        assert_eq!(
+            a.checked_platforms(),
+            &CheckPlatforms {
+                mac: false,
+                windows: false
+            }
+        );
+
+        assert_eq!(
+            GitPathSegment::new_with_platform_checks(
                 bad_name,
                 &CheckPlatforms {
                     mac: true,
