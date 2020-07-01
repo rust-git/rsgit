@@ -324,6 +324,15 @@ mod tests {
         assert_eq!(a.email(), "author@example.com");
         assert_eq!(a.timestamp(), 1234567890);
         assert_eq!(a.tz_offset(), -420);
+
+        let line = b"A U Thor <author@example.com> and others 1234567890 ~0700".to_vec();
+        let mut c = Cursor::new(&line);
+        let a = Attribution::parse(&mut c).unwrap();
+
+        assert_eq!(a.name(), "A U Thor");
+        assert_eq!(a.email(), "author@example.com");
+        assert_eq!(a.timestamp(), 1234567890);
+        assert_eq!(a.tz_offset(), 0);
     }
 
     #[test]
