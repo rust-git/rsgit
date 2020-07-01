@@ -1,4 +1,4 @@
-use std::io::{Read, Result};
+use std::io::{BufRead, Cursor, Result};
 use std::vec::Vec;
 
 /// Trait used for reading git object content from various sources.
@@ -15,38 +15,7 @@ pub trait ContentSource {
     }
 
     /// Returns a `Read` struct which can be used for reading the content.
-    fn open<'a>(&'a self) -> Result<Box<dyn Read + 'a>>;
-}
-
-struct ByteSliceReader<'a> {
-    v: &'a [u8],
-    len: usize,
-    offset: usize,
-}
-
-impl<'a> ByteSliceReader<'a> {
-    fn new(v: &'a [u8]) -> ByteSliceReader<'a> {
-        ByteSliceReader {
-            v,
-            len: v.len(),
-            offset: 0,
-        }
-    }
-}
-
-impl<'a> Read for ByteSliceReader<'a> {
-    fn read(&mut self, buf: &mut [u8]) -> Result<usize> {
-        let len = self.len;
-        if self.offset < len {
-            let copy_len = (len - self.offset).min(buf.len());
-            let copy_from = &(self.v)[self.offset..(self.offset + copy_len)];
-            buf[0..copy_len].copy_from_slice(&copy_from);
-            self.offset += copy_len;
-            Ok(copy_len)
-        } else {
-            Ok(0)
-        }
-    }
+    fn open<'a>(&'a self) -> Result<Box<dyn BufRead + 'a>>;
 }
 
 impl ContentSource for Vec<u8> {
@@ -54,8 +23,8 @@ impl ContentSource for Vec<u8> {
         self.len()
     }
 
-    fn open<'x>(&'x self) -> Result<Box<dyn Read + 'x>> {
-        Ok(Box::new(ByteSliceReader::new(self)))
+    fn open<'x>(&'x self) -> Result<Box<dyn BufRead + 'x>> {
+        Ok(Box::new(Cursor::new(self)))
     }
 }
 
@@ -64,8 +33,8 @@ impl ContentSource for String {
         self.len()
     }
 
-    fn open<'x>(&'x self) -> Result<Box<dyn Read + 'x>> {
-        Ok(Box::new(ByteSliceReader::new(self.as_bytes())))
+    fn open<'x>(&'x self) -> Result<Box<dyn BufRead + 'x>> {
+        Ok(Box::new(Cursor::new(self.as_bytes())))
     }
 }
 
