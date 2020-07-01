@@ -333,6 +333,17 @@ mod tests {
         assert_eq!(a.email(), "author@example.com");
         assert_eq!(a.timestamp(), 1234567890);
         assert_eq!(a.tz_offset(), 0);
+    }
+
+    #[test]
+    fn parse_bad_utf8() {
+        let line = b"M\xE2 <me@example.com> 1234567890 -0700".to_vec();
+        let mut c = Cursor::new(&line);
+        assert_eq!(Attribution::parse(&mut c), None);
+
+        let line = b"Me <me@e\x88ample.com> 1234567890 -0700".to_vec();
+        let mut c = Cursor::new(&line);
+        assert_eq!(Attribution::parse(&mut c), None);
 
         let line = b"A U Thor <author@example.com> and others 1234567890 -07z0".to_vec();
         let mut c = Cursor::new(&line);
