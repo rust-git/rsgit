@@ -8,24 +8,24 @@ use sha1::{Digest, Sha1};
 use crate::content_source::ContentSource;
 
 mod id;
-pub use id::{ObjectId, ParseObjectIdError, ParseObjectIdErrorKind};
+pub use id::{Id, ParseIdError, ParseIdErrorKind};
 
 mod kind;
-pub use kind::ObjectKind;
+pub use kind::Kind;
 
 /// Describes a single object stored (or about to be stored) in a git repository.
 ///
 /// This struct is constructed, modified, and shared as a working description of
 /// how to find and describe an object before it gets written to a repository.
 pub struct Object {
-    id: Option<ObjectId>,
-    kind: ObjectKind,
+    id: Option<Id>,
+    kind: Kind,
     content_source: Box<dyn ContentSource>,
 }
 
 impl Object {
     /// Create a new Object.
-    pub fn new(kind: ObjectKind, content_source: Box<dyn ContentSource>) -> Object {
+    pub fn new(kind: Kind, content_source: Box<dyn ContentSource>) -> Object {
         Object {
             id: None,
             kind,
@@ -35,14 +35,14 @@ impl Object {
 
     /// Return the ID of the object, if it is known.
     #[cfg_attr(tarpaulin, skip)]
-    pub fn id(&self) -> &Option<ObjectId> {
+    pub fn id(&self) -> &Option<Id> {
         // Code coverage doesn't seem to see this line.
         // Not sure why, but I have independently verified it is reached.
         &self.id
     }
 
     /// Return the kind of the object.
-    pub fn kind(&self) -> ObjectKind {
+    pub fn kind(&self) -> Kind {
         self.kind
     }
 
@@ -98,7 +98,7 @@ impl Object {
 
             // We use unwrap here becuase hasher is guaranteed
             // to return a 20-byte slice.
-            self.id = Some(ObjectId::new(id).unwrap());
+            self.id = Some(Id::new(id).unwrap());
         }
 
         Ok(())
@@ -121,10 +121,10 @@ mod tests {
     #[test]
     fn empty_vec() {
         let v = vec![];
-        let o = Object::new(ObjectKind::Blob, Box::new(v));
+        let o = Object::new(Kind::Blob, Box::new(v));
 
         assert_eq!(*o.id(), None);
-        assert_eq!(o.kind(), ObjectKind::Blob);
+        assert_eq!(o.kind(), Kind::Blob);
         assert_eq!(o.kind().to_string(), "blob");
         assert_eq!(o.len(), 0);
         assert!(o.is_empty());
@@ -144,10 +144,10 @@ mod tests {
     #[test]
     fn vec_with_content() {
         let v = vec![2, 3, 45, 67];
-        let o = Object::new(ObjectKind::Blob, Box::new(v));
+        let o = Object::new(Kind::Blob, Box::new(v));
 
         assert_eq!(*o.id(), None);
-        assert_eq!(o.kind(), ObjectKind::Blob);
+        assert_eq!(o.kind(), Kind::Blob);
         assert_eq!(o.len(), 4);
         assert!(!o.is_empty());
 
@@ -173,10 +173,10 @@ mod tests {
     #[test]
     fn empty_str() {
         let s = "".to_string();
-        let o = Object::new(ObjectKind::Blob, Box::new(s));
+        let o = Object::new(Kind::Blob, Box::new(s));
 
         assert_eq!(*o.id(), None);
-        assert_eq!(o.kind(), ObjectKind::Blob);
+        assert_eq!(o.kind(), Kind::Blob);
         assert_eq!(o.len(), 0);
         assert!(o.is_empty());
 
@@ -195,10 +195,10 @@ mod tests {
     #[test]
     fn str_with_content() {
         let s = "ABCD".to_string();
-        let o = Object::new(ObjectKind::Blob, Box::new(s));
+        let o = Object::new(Kind::Blob, Box::new(s));
 
         assert_eq!(*o.id(), None);
-        assert_eq!(o.kind(), ObjectKind::Blob);
+        assert_eq!(o.kind(), Kind::Blob);
         assert_eq!(o.len(), 4);
         assert!(!o.is_empty());
 
@@ -226,7 +226,7 @@ mod tests {
         // $ echo 'test content' | git hash-object --stdin
         // d670460b4b4aece5915caf5c68d12f560a9fe3e4
 
-        let mut o = Object::new(ObjectKind::Blob, Box::new("test content\n".to_string()));
+        let mut o = Object::new(Kind::Blob, Box::new("test content\n".to_string()));
         o.assign_id().unwrap();
 
         assert_eq!(
@@ -268,7 +268,7 @@ mod tests {
         let fcs = FileContentSource::new(&path).unwrap();
         assert_eq!(fcs.len(), 6000);
 
-        let mut o = Object::new(ObjectKind::Blob, Box::new(fcs));
+        let mut o = Object::new(Kind::Blob, Box::new(fcs));
         o.assign_id().unwrap();
 
         assert_eq!(o.id().as_ref().unwrap().to_string(), expected_id);

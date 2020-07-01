@@ -16,11 +16,7 @@ pub use git_path::GitPath;
 pub use git_path::GitPathError;
 pub use git_path::GitPathSegment;
 
-mod object;
-pub use object::Object;
-pub use object::ObjectKind;
-pub use object::ParseObjectIdError;
-pub use object::ParseObjectIdErrorKind;
+pub mod object;
 
 pub mod on_disk_repo;
 

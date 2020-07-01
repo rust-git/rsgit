@@ -6,23 +6,23 @@ use std::fmt::{self, Display, Formatter};
 /// Describes the fundamental git object type (blob, tree, commit, or tag).
 /// We use the word `kind` here to avoid conflict with the Rust reserved word `type`.
 #[derive(Copy, Clone, Debug, PartialEq)]
-pub enum ObjectKind {
+pub enum Kind {
     Blob,
     Tree,
     Commit,
     Tag,
 }
 
-impl Display for ObjectKind {
+impl Display for Kind {
     #[cfg_attr(tarpaulin, skip)]
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         // Code coverage doesn't see the "match self" line.
         // Not sure why, but I have independently verified it is reached.
         match self {
-            ObjectKind::Blob => write!(f, "blob"),
-            ObjectKind::Tree => write!(f, "tree"),
-            ObjectKind::Commit => write!(f, "commit"),
-            ObjectKind::Tag => write!(f, "tag"),
+            Kind::Blob => write!(f, "blob"),
+            Kind::Tree => write!(f, "tree"),
+            Kind::Commit => write!(f, "commit"),
+            Kind::Tag => write!(f, "tag"),
         }
     }
 }
@@ -33,16 +33,16 @@ mod tests {
 
     #[test]
     fn to_string() {
-        let k = ObjectKind::Blob;
+        let k = Kind::Blob;
         assert_eq!(k.to_string(), "blob");
 
-        let k = ObjectKind::Commit;
+        let k = Kind::Commit;
         assert_eq!(k.to_string(), "commit");
 
-        let k = ObjectKind::Tree;
+        let k = Kind::Tree;
         assert_eq!(k.to_string(), "tree");
 
-        let k = ObjectKind::Tag;
+        let k = Kind::Tag;
         assert_eq!(k.to_string(), "tag");
     }
 }
