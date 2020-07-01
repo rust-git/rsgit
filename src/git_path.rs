@@ -273,14 +273,6 @@ fn check_truncated_utf8_for_mac(segment: &[u8]) -> Result<(), GitPathError> {
 }
 
 fn match_mac_hfs_path(segment: &[u8], m: &[u8]) -> bool {
-    if segment == m {
-        true
-    } else {
-        match_mac_hfs_path_inner(segment, m)
-    }
-}
-
-fn match_mac_hfs_path_inner(segment: &[u8], m: &[u8]) -> bool {
     if segment.is_empty() && m.is_empty() {
         true
     } else if segment.is_empty() {
@@ -340,14 +332,14 @@ fn match_mac_hfs_path_inner(segment: &[u8], m: &[u8]) -> bool {
             };
 
             if ignorable_char {
-                return match_mac_hfs_path_inner(&segment[3..], m);
+                return match_mac_hfs_path(&segment[3..], m);
             }
         }
 
         if m.is_empty() || segment.first() != m.first() {
             false
         } else {
-            match_mac_hfs_path_inner(&segment[1..], &m[1..])
+            match_mac_hfs_path(&segment[1..], &m[1..])
         }
     }
 }
