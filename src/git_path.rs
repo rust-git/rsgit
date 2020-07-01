@@ -46,10 +46,7 @@ impl<'a> GitPath<'a> {
     /// as a git path. The rules enforced here are slightly different from what
     /// is allowed in a `tree` object in that we allow `/` characters to build
     /// hierarchical paths.
-    #[cfg_attr(tarpaulin, skip)]
     pub fn new(path: &'a [u8]) -> Result<GitPath<'a>, GitPathError> {
-        // Argh. `cargo fmt` reformats this into a format that generates
-        // "coverage" for some of the arguments below, but not all.
         GitPath::new_with_platform_checks(
             path,
             &CheckPlatforms {
@@ -62,13 +59,10 @@ impl<'a> GitPath<'a> {
     /// Convert the provided byte vector to a `GitPath` struct if it is acceptable
     /// as a git path. In addition to the typical constraints enforced via `new()`,
     /// also check platform-specific rules.
-    #[cfg_attr(tarpaulin, skip)]
     pub fn new_with_platform_checks(
         path: &'a [u8],
         platforms: &CheckPlatforms,
     ) -> Result<GitPath<'a>, GitPathError> {
-        // Argh. `cargo fmt` reformats this into a format that generates
-        // "coverage" for some of the arguments below, but not all.
         match check_path(path, platforms) {
             Ok(()) => Ok(GitPath {
                 path,
@@ -93,10 +87,7 @@ impl<'a> GitPathSegment<'a> {
     /// Convert the provided byte vector to a `GitPathSegment` struct if it is
     /// acceptable as a git path segment. Similarly to a `tree` object, we do not
     /// allow `/` characters.
-    #[cfg_attr(tarpaulin, skip)]
     pub fn new(path: &'a [u8]) -> Result<GitPathSegment<'a>, GitPathError> {
-        // Argh. `cargo fmt` reformats this into a format that generates
-        // "coverage" for some of the arguments below, but not all.
         GitPathSegment::new_with_platform_checks(
             path,
             &CheckPlatforms {
@@ -109,13 +100,10 @@ impl<'a> GitPathSegment<'a> {
     /// Convert the provided byte vector to a `GitPathSegment` struct if it is acceptable
     /// as a git path. In addition to the typical constraints enforced via `new()`,
     /// also check platform-specific rules.
-    #[cfg_attr(tarpaulin, skip)]
     pub fn new_with_platform_checks(
         path: &'a [u8],
         platforms: &CheckPlatforms,
     ) -> Result<GitPathSegment<'a>, GitPathError> {
-        // Argh. `cargo fmt` reformats this into a format that generates
-        // "coverage" for some of the arguments below, but not all.
         match check_segment(path, platforms) {
             Ok(()) => Ok(GitPathSegment {
                 path,

@@ -162,10 +162,7 @@ pub enum ObjectKind {
 }
 
 impl Display for ObjectKind {
-    #[cfg_attr(tarpaulin, skip)]
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        // Code coverage doesn't see the "match self" line.
-        // Not sure why, but I have independently verified it is reached.
         match self {
             ObjectKind::Blob => write!(f, "blob"),
             ObjectKind::Tree => write!(f, "tree"),
@@ -196,10 +193,7 @@ impl Object {
     }
 
     /// Return the ID of the object, if it is known.
-    #[cfg_attr(tarpaulin, skip)]
     pub fn id(&self) -> &Option<ObjectId> {
-        // Code coverage doesn't seem to see this line.
-        // Not sure why, but I have independently verified it is reached.
         &self.id
     }
 
@@ -490,7 +484,6 @@ mod tests {
     }
 
     #[test]
-    #[cfg_attr(tarpaulin, skip)]
     fn assign_id_from_file() {
         let dir = TempDir::new().unwrap();
         let path = dir.as_ref().join("example");
