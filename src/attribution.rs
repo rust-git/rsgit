@@ -343,6 +343,16 @@ mod tests {
         assert_eq!(a.timestamp(), 1234567890);
         assert_eq!(a.tz_offset(), -420);
         // undefined behavior; this is "reasonable" I guess
+
+        let line = b"A U Thor<author@example.com>1234567890 -0\xA700".to_vec();
+        let mut c = Cursor::new(&line);
+        let a = Attribution::parse(&mut c).unwrap();
+
+        assert_eq!(a.name(), "A U Thor");
+        assert_eq!(a.email(), "author@example.com");
+        assert_eq!(a.timestamp(), 1234567890);
+        assert_eq!(a.tz_offset(), 0);
+        // Should be zero'd out because TZ isn't valid UTF8.
     }
 
     #[test]
