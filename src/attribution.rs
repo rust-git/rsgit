@@ -336,6 +336,21 @@ mod tests {
     }
 
     #[test]
+    fn parse_io_error() {
+        use std::io::{BufReader, Error, ErrorKind, Read, Result};
+
+        struct Broken;
+        impl Read for Broken {
+            fn read(&mut self, _buf: &mut [u8]) -> Result<usize> {
+                Err(Error::new(ErrorKind::BrokenPipe, "uh-oh!"))
+            }
+        }
+        let mut b = BufReader::new(Broken);
+
+        assert_eq!(Attribution::parse(&mut b), None);
+    }
+
+    #[test]
     fn parse_bad_utf8() {
         let line = b"M\xE2 <me@example.com> 1234567890 -0700".to_vec();
         let mut c = Cursor::new(&line);
