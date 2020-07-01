@@ -169,6 +169,41 @@ mod id_tests {
     extern crate tempfile;
 
     #[test]
+    fn object_id_from_slice() {
+        let b = [
+            0x3c, 0xd9, 0x32, 0x9a, 0xc5, 0x36, 0x13, 0xa0, 0xbf, 0xa1, 0x98, 0xae, 0x28, 0xf3,
+            0xaf, 0x95, 0x7e, 0x49, 0x57, 0x3c,
+        ];
+
+        let oid = ObjectId::new(&b).unwrap();
+        assert_eq!(oid.to_string(), "3cd9329ac53613a0bfa198ae28f3af957e49573c");
+
+        let b: [u8; 0] = [];
+        assert_eq!(
+            ObjectId::new(&b).unwrap_err().kind(),
+            ParseObjectIdErrorKind::Empty
+        );
+
+        let b: [u8; 19] = [
+            0x3c, 0xd9, 0x32, 0x9a, 0xc5, 0x36, 0x13, 0xa0, 0xbf, 0xa1, 0x98, 0xae, 0x28, 0xf3,
+            0xaf, 0x95, 0x7e, 0x49, 0x57,
+        ];
+        assert_eq!(
+            ObjectId::new(&b).unwrap_err().kind(),
+            ParseObjectIdErrorKind::Underflow
+        );
+
+        let b: [u8; 21] = [
+            0x3c, 0xd9, 0x32, 0x9a, 0xc5, 0x36, 0x13, 0xa0, 0xbf, 0xa1, 0x98, 0xae, 0x28, 0xf3,
+            0xaf, 0x95, 0x7e, 0x49, 0x57, 0x3c, 0x3c,
+        ];
+        assert_eq!(
+            ObjectId::new(&b).unwrap_err().kind(),
+            ParseObjectIdErrorKind::Overflow
+        );
+    }
+
+    #[test]
     fn object_id_from_hex() {
         let oid =
             ObjectId::from_hex("3cd9329ac53613a0bfa198ae28f3af957e49573c".as_bytes()).unwrap();
