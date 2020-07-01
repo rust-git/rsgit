@@ -65,7 +65,7 @@ pub struct Id {
 
 impl Id {
     /// Create a new ID from a 20-byte hex slice.
-    /// 
+    ///
     /// It is an error if the slice contains anything other than 20 bytes.
     pub fn new(id: &[u8]) -> Result<Id, ParseIdError> {
         match id.len() {
@@ -178,34 +178,24 @@ mod tests {
         assert_eq!(oid.to_string(), "3cd9329ac53613a0bfa198ae28f3af957e49573c");
 
         let b: [u8; 0] = [];
-        assert_eq!(
-            Id::new(&b).unwrap_err().kind(),
-            ParseIdErrorKind::Empty
-        );
+        assert_eq!(Id::new(&b).unwrap_err().kind(), ParseIdErrorKind::Empty);
 
         let b: [u8; 19] = [
             0x3c, 0xd9, 0x32, 0x9a, 0xc5, 0x36, 0x13, 0xa0, 0xbf, 0xa1, 0x98, 0xae, 0x28, 0xf3,
             0xaf, 0x95, 0x7e, 0x49, 0x57,
         ];
-        assert_eq!(
-            Id::new(&b).unwrap_err().kind(),
-            ParseIdErrorKind::Underflow
-        );
+        assert_eq!(Id::new(&b).unwrap_err().kind(), ParseIdErrorKind::Underflow);
 
         let b: [u8; 21] = [
             0x3c, 0xd9, 0x32, 0x9a, 0xc5, 0x36, 0x13, 0xa0, 0xbf, 0xa1, 0x98, 0xae, 0x28, 0xf3,
             0xaf, 0x95, 0x7e, 0x49, 0x57, 0x3c, 0x3c,
         ];
-        assert_eq!(
-            Id::new(&b).unwrap_err().kind(),
-            ParseIdErrorKind::Overflow
-        );
+        assert_eq!(Id::new(&b).unwrap_err().kind(), ParseIdErrorKind::Overflow);
     }
 
     #[test]
     fn from_hex() {
-        let oid =
-            Id::from_hex("3cd9329ac53613a0bfa198ae28f3af957e49573c".as_bytes()).unwrap();
+        let oid = Id::from_hex("3cd9329ac53613a0bfa198ae28f3af957e49573c".as_bytes()).unwrap();
         assert_eq!(oid.to_string(), "3cd9329ac53613a0bfa198ae28f3af957e49573c");
     }
 
