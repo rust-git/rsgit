@@ -127,7 +127,7 @@ fn split_once<'a>(s: &'a [u8], c: &u8) -> (&'a [u8], &'a [u8]) {
     }
 }
 
-fn drop_last_space<'a>(s: &'a [u8]) -> &'a [u8] {
+fn drop_last_space(s: &[u8]) -> &[u8] {
     if s.last() == Some(&b' ') {
         &s[0..s.len() - 1]
     } else {
@@ -135,7 +135,7 @@ fn drop_last_space<'a>(s: &'a [u8]) -> &'a [u8] {
     }
 }
 
-fn last_word<'a>(s: &'a [u8]) -> (String, &'a [u8]) {
+fn last_word(s: &[u8]) -> (String, &[u8]) {
     let s = match s.iter().position(|b| b != &b' ') {
         Some(n) => &s[n..],
         None => s,
