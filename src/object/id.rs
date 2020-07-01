@@ -163,13 +163,13 @@ fn digit_value(c: u8) -> Result<u8, ParseObjectIdError> {
 }
 
 #[cfg(test)]
-mod id_tests {
+mod tests {
     use super::*;
 
     extern crate tempfile;
 
     #[test]
-    fn object_id_from_slice() {
+    fn new() {
         let b = [
             0x3c, 0xd9, 0x32, 0x9a, 0xc5, 0x36, 0x13, 0xa0, 0xbf, 0xa1, 0x98, 0xae, 0x28, 0xf3,
             0xaf, 0x95, 0x7e, 0x49, 0x57, 0x3c,
@@ -204,20 +204,20 @@ mod id_tests {
     }
 
     #[test]
-    fn object_id_from_hex() {
+    fn from_hex() {
         let oid =
             ObjectId::from_hex("3cd9329ac53613a0bfa198ae28f3af957e49573c".as_bytes()).unwrap();
         assert_eq!(oid.to_string(), "3cd9329ac53613a0bfa198ae28f3af957e49573c");
     }
 
     #[test]
-    fn object_id_from_str() {
+    fn from_str() {
         let oid = ObjectId::from_str("3cd9329ac53613a0bfa198ae28f3af957e49573c").unwrap();
         assert_eq!(oid.to_string(), "3cd9329ac53613a0bfa198ae28f3af957e49573c");
     }
 
     #[test]
-    fn object_id_from_empty_str() {
+    fn from_empty_str() {
         let r = ObjectId::from_hex("");
         assert!(r.is_err());
 
@@ -228,7 +228,7 @@ mod id_tests {
     }
 
     #[test]
-    fn object_id_from_invalid_str() {
+    fn from_invalid_str() {
         let r = ObjectId::from_hex("3cD9329ac53613a0bfa198ae28f3af957e49573c");
         assert!(r.is_err());
 
@@ -239,7 +239,7 @@ mod id_tests {
     }
 
     #[test]
-    fn object_id_too_long() {
+    fn from_hex_too_long() {
         let r = ObjectId::from_hex("3cd9329ac53613a0bfa198ae28f3af957e49573c4");
         assert!(r.is_err());
 
@@ -250,7 +250,7 @@ mod id_tests {
     }
 
     #[test]
-    fn object_id_too_short() {
+    fn from_hex_too_short() {
         let r = ObjectId::from_hex("3cd9329ac53613a0bfa198ae28f3af957e49573");
         assert!(r.is_err());
 
@@ -261,7 +261,7 @@ mod id_tests {
     }
 
     #[test]
-    fn object_id_zero() {
+    fn error_zero() {
         let r = ObjectId::from_hex("0000000000000000000000000000000000000000");
         assert!(r.is_err());
 
