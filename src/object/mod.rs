@@ -5,7 +5,11 @@ use std::io::{self, BufRead, BufReader};
 
 use sha1::{Digest, Sha1};
 
-use crate::content_source::ContentSource;
+mod content_source;
+pub use content_source::ContentSource;
+
+mod file_content_source;
+pub use file_content_source::FileContentSource;
 
 mod id;
 pub use id::{Id, ParseIdError, ParseIdErrorKind};
@@ -112,8 +116,6 @@ mod tests {
     use std::fs::File;
     use std::io::Write;
     use std::process::Command;
-
-    use crate::FileContentSource;
 
     extern crate tempfile;
     use tempfile::TempDir;
