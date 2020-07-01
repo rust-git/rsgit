@@ -254,7 +254,7 @@ fn check_windows_device_name(segment: &[u8]) -> Result<(), GitPathError> {
             } else {
                 Ok(())
             }
-        },
+        }
         _ => Ok(()),
     }
 }
