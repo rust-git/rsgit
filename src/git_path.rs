@@ -553,8 +553,9 @@ mod tests {
     const WINDOWS_DEVICE_NAMES: [&[u8]; 8] = [
         b"aux", b"con", b"com1", b"com7", b"lpt1", b"lpt3", b"nul", b"prn",
     ];
-    const ALMOST_WINDOWS_DEVICE_NAMES: [&[u8]; 6] =
-        [b"aub", b"con1", b"com", b"lpt", b"nul3", b"prn8"];
+    const ALMOST_WINDOWS_DEVICE_NAMES: [&[u8]; 9] = [
+        b"aub", b"con1", b"com", b"lpt", b"nul3", b"prn8", b"co", b"com12", b"com0",
+    ];
 
     #[test]
     fn invalid_windows_device_names() {
