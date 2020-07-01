@@ -2,7 +2,7 @@
 //! object type and binary data identified by the hash of the binary data.
 
 use std::fmt::{self, Display, Formatter, Write};
-use std::io::{self, Read};
+use std::io::{self, BufRead, BufReader};
 use std::str::FromStr;
 
 use sha1::{Digest, Sha1};
@@ -218,9 +218,10 @@ impl Object {
         self.len() == 0
     }
 
-    /// Returns a `Read` struct which can be used for reading the content.
-    pub fn open<'a>(&'a self) -> io::Result<Box<dyn Read + 'a>> {
-        self.content_source.open()
+    /// Returns a `BufRead` struct which can be used for reading the content.
+    pub fn open<'a>(&'a self) -> io::Result<Box<dyn BufRead + 'a>> {
+        let f = self.content_source.open()?;
+        Ok(Box::new(BufReader::new(f)))
     }
 
     /// Computes the object's ID from its content, size, and type.

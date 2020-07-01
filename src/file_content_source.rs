@@ -1,6 +1,6 @@
 use std::convert::AsRef;
 use std::fs::{self, File};
-use std::io::{self, BufReader, Error, ErrorKind, Read};
+use std::io::{self, BufRead, BufReader, Error, ErrorKind};
 use std::path::{Path, PathBuf};
 
 use crate::ContentSource;
@@ -32,7 +32,7 @@ impl ContentSource for FileContentSource {
         self.len
     }
 
-    fn open<'a>(&'a self) -> io::Result<Box<dyn Read + 'a>> {
+    fn open<'a>(&'a self) -> io::Result<Box<dyn BufRead + 'a>> {
         let f = File::open(&self.path)?;
         Ok(Box::new(BufReader::new(f)))
     }
