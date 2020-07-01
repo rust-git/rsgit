@@ -10,6 +10,11 @@ pub use file_content_source::FileContentSource;
 mod file_mode;
 pub use file_mode::FileMode;
 
+mod git_path;
+pub use git_path::CheckPlatforms;
+pub use git_path::GitPath;
+pub use git_path::GitPathError;
+
 mod object;
 pub use object::Object;
 pub use object::ObjectKind;
