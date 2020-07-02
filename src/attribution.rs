@@ -1,5 +1,4 @@
 use std::fmt;
-use std::io::BufRead;
 use std::str::{self, FromStr};
 use std::string::String;
 
@@ -34,13 +33,9 @@ impl Attribution {
 
     /// Parse a name line (e.g. author, committer, tagger) into an `Attribution` struct.
     /// Returns `None` if unable to parse the line properly.
-    pub fn parse(b: &mut dyn BufRead) -> Option<Attribution> {
-        let mut line: Vec<u8> = Vec::new();
-        if b.read_until(10, &mut line).is_err() {
-            return None;
-        };
-
-        let (name, line) = split_once(line.as_slice(), &b'<');
+    pub fn parse(line: &[u8]) -> Option<Attribution> {
+        let line = drop_last_newline(line);
+        let (name, line) = split_once(line, &b'<');
         let name = drop_last_space(name);
         let name = match str::from_utf8(name) {
             Ok(name_str) => name_str.to_string(),
@@ -124,6 +119,14 @@ fn split_once<'a>(s: &'a [u8], c: &u8) -> (&'a [u8], &'a [u8]) {
     match s.iter().position(|b| b == c) {
         Some(n) => (&s[0..n], &s[n + 1..]),
         None => (s, &[]),
+    }
+}
+
+fn drop_last_newline(s: &[u8]) -> &[u8] {
+    if s.last() == Some(&10) {
+        &s[0..s.len() - 1]
+    } else {
+        s
     }
 }
 
@@ -220,8 +223,6 @@ impl fmt::Display for Attribution {
 mod tests {
     use super::Attribution;
 
-    use std::io::Cursor;
-
     #[test]
     fn happy_path() {
         let a = Attribution::new("A U Thor", "author@example.com", 1_142_878_501, 150);
@@ -239,64 +240,43 @@ mod tests {
 
     #[test]
     fn parse_legal_cases() {
-        let line = b"Me <me@example.com> 1234567890 -0700".to_vec();
-        let mut c = Cursor::new(&line);
-        let a = Attribution::parse(&mut c).unwrap();
-
+        let a = Attribution::parse(b"Me <me@example.com> 1234567890 -0700\n").unwrap();
         assert_eq!(a.name(), "Me");
         assert_eq!(a.email(), "me@example.com");
         assert_eq!(a.timestamp(), 1234567890);
         assert_eq!(a.tz_offset(), -420);
 
-        let line = b" Me <me@example.com> 1234567890 -0700".to_vec();
-        let mut c = Cursor::new(&line);
-        let a = Attribution::parse(&mut c).unwrap();
-
+        let a = Attribution::parse(b" Me <me@example.com> 1234567890 -0700\n").unwrap();
         assert_eq!(a.name(), " Me");
         assert_eq!(a.email(), "me@example.com");
         assert_eq!(a.timestamp(), 1234567890);
         assert_eq!(a.tz_offset(), -420);
 
-        let line = b"A U Thor <author@example.com> 1234567890 -0700".to_vec();
-        let mut c = Cursor::new(&line);
-        let a = Attribution::parse(&mut c).unwrap();
-
+        let a = Attribution::parse(b"A U Thor <author@example.com> 1234567890 -0700").unwrap();
         assert_eq!(a.name(), "A U Thor");
         assert_eq!(a.email(), "author@example.com");
         assert_eq!(a.timestamp(), 1234567890);
         assert_eq!(a.tz_offset(), -420);
 
-        let line = b"A U Thor<author@example.com> 1234567890 -0700".to_vec();
-        let mut c = Cursor::new(&line);
-        let a = Attribution::parse(&mut c).unwrap();
-
+        let a = Attribution::parse(b"A U Thor<author@example.com> 1234567890 -0700").unwrap();
         assert_eq!(a.name(), "A U Thor");
         assert_eq!(a.email(), "author@example.com");
         assert_eq!(a.timestamp(), 1234567890);
         assert_eq!(a.tz_offset(), -420);
 
-        let line = b"A U Thor<author@example.com>1234567890 +0700".to_vec();
-        let mut c = Cursor::new(&line);
-        let a = Attribution::parse(&mut c).unwrap();
-
+        let a = Attribution::parse(b"A U Thor<author@example.com>1234567890 +0700").unwrap();
         assert_eq!(a.name(), "A U Thor");
         assert_eq!(a.email(), "author@example.com");
         assert_eq!(a.timestamp(), 1234567890);
         assert_eq!(a.tz_offset(), 420);
 
-        let line = b" A U Thor   < author@example.com > 1234567890 -0700".to_vec();
-        let mut c = Cursor::new(&line);
-        let a = Attribution::parse(&mut c).unwrap();
-
+        let a = Attribution::parse(b" A U Thor   < author@example.com > 1234567890 -0700").unwrap();
         assert_eq!(a.name(), " A U Thor  ");
         assert_eq!(a.email(), " author@example.com ");
         assert_eq!(a.timestamp(), 1234567890);
         assert_eq!(a.tz_offset(), -420);
 
-        let line = b"A U Thor<author@example.com>1234567890 -0700".to_vec();
-        let mut c = Cursor::new(&line);
-        let a = Attribution::parse(&mut c).unwrap();
-
+        let a = Attribution::parse(b"A U Thor<author@example.com>1234567890 -0700").unwrap();
         assert_eq!(a.name(), "A U Thor");
         assert_eq!(a.email(), "author@example.com");
         assert_eq!(a.timestamp(), 1234567890);
@@ -305,30 +285,24 @@ mod tests {
 
     #[test]
     fn parse_fuzzy_cases() {
-        let line =
-            b"A U Thor <author@example.com>,  C O. Miter <comiter@example.com> 1234567890 -0700"
-                .to_vec();
-        let mut c = Cursor::new(&line);
-        let a = Attribution::parse(&mut c).unwrap();
-
+        let a = Attribution::parse(
+            b"A U Thor <author@example.com>,  C O. Miter <comiter@example.com> 1234567890 -0700",
+        )
+        .unwrap();
         assert_eq!(a.name(), "A U Thor");
         assert_eq!(a.email(), "author@example.com");
         assert_eq!(a.timestamp(), 1234567890);
         assert_eq!(a.tz_offset(), -420);
 
-        let line = b"A U Thor <author@example.com> and others 1234567890 -0700".to_vec();
-        let mut c = Cursor::new(&line);
-        let a = Attribution::parse(&mut c).unwrap();
-
+        let a = Attribution::parse(b"A U Thor <author@example.com> and others 1234567890 -0700")
+            .unwrap();
         assert_eq!(a.name(), "A U Thor");
         assert_eq!(a.email(), "author@example.com");
         assert_eq!(a.timestamp(), 1234567890);
         assert_eq!(a.tz_offset(), -420);
 
-        let line = b"A U Thor <author@example.com> and others 1234567890 ~0700".to_vec();
-        let mut c = Cursor::new(&line);
-        let a = Attribution::parse(&mut c).unwrap();
-
+        let a = Attribution::parse(b"A U Thor <author@example.com> and others 1234567890 ~0700")
+            .unwrap();
         assert_eq!(a.name(), "A U Thor");
         assert_eq!(a.email(), "author@example.com");
         assert_eq!(a.timestamp(), 1234567890);
@@ -336,44 +310,26 @@ mod tests {
     }
 
     #[test]
-    fn parse_io_error() {
-        use std::io::{BufReader, Error, ErrorKind, Read, Result};
-
-        struct Broken;
-        impl Read for Broken {
-            fn read(&mut self, _buf: &mut [u8]) -> Result<usize> {
-                Err(Error::new(ErrorKind::BrokenPipe, "uh-oh!"))
-            }
-        }
-        let mut b = BufReader::new(Broken);
-
-        assert_eq!(Attribution::parse(&mut b), None);
-    }
-
-    #[test]
     fn parse_bad_utf8() {
-        let line = b"M\xE2 <me@example.com> 1234567890 -0700".to_vec();
-        let mut c = Cursor::new(&line);
-        assert_eq!(Attribution::parse(&mut c), None);
+        assert_eq!(
+            Attribution::parse(b"M\xE2 <me@example.com> 1234567890 -0700"),
+            None
+        );
 
-        let line = b"Me <me@e\x88ample.com> 1234567890 -0700".to_vec();
-        let mut c = Cursor::new(&line);
-        assert_eq!(Attribution::parse(&mut c), None);
+        assert_eq!(
+            Attribution::parse(b"Me <me@e\x88ample.com> 1234567890 -0700"),
+            None
+        );
 
-        let line = b"A U Thor <author@example.com> and others 1234567890 -07z0".to_vec();
-        let mut c = Cursor::new(&line);
-        let a = Attribution::parse(&mut c).unwrap();
-
+        let a = Attribution::parse(b"A U Thor <author@example.com> and others 1234567890 -07z0")
+            .unwrap();
         assert_eq!(a.name(), "A U Thor");
         assert_eq!(a.email(), "author@example.com");
         assert_eq!(a.timestamp(), 1234567890);
         assert_eq!(a.tz_offset(), -420);
         // undefined behavior; this is "reasonable" I guess
 
-        let line = b"A U Thor<author@example.com>1234567890 -0\xA700".to_vec();
-        let mut c = Cursor::new(&line);
-        let a = Attribution::parse(&mut c).unwrap();
-
+        let a = Attribution::parse(b"A U Thor<author@example.com>1234567890 -0\xA700").unwrap();
         assert_eq!(a.name(), "A U Thor");
         assert_eq!(a.email(), "author@example.com");
         assert_eq!(a.timestamp(), 1234567890);
@@ -383,100 +339,67 @@ mod tests {
 
     #[test]
     fn parse_incomplete_cases() {
-        let line = b"Me <> 1234567890 -0700".to_vec();
-        let mut c = Cursor::new(&line);
-        let a = Attribution::parse(&mut c).unwrap();
-
+        let a = Attribution::parse(b"Me <> 1234567890 -0700").unwrap();
         assert_eq!(a.name(), "Me");
         assert_eq!(a.email(), "");
         assert_eq!(a.timestamp(), 1234567890);
         assert_eq!(a.tz_offset(), -420);
 
-        let line = b" <me@example.com> 1234567890 -0700".to_vec();
-        let mut c = Cursor::new(&line);
-        let a = Attribution::parse(&mut c).unwrap();
-
+        let a = Attribution::parse(b" <me@example.com> 1234567890 -0700").unwrap();
         assert_eq!(a.name(), "");
         assert_eq!(a.email(), "me@example.com");
         assert_eq!(a.timestamp(), 1234567890);
         assert_eq!(a.tz_offset(), -420);
 
-        let line = b" <> 1234567890 -0700".to_vec();
-        let mut c = Cursor::new(&line);
-        let a = Attribution::parse(&mut c).unwrap();
-
+        let a = Attribution::parse(b" <> 1234567890 -0700").unwrap();
         assert_eq!(a.name(), "");
         assert_eq!(a.email(), "");
         assert_eq!(a.timestamp(), 1234567890);
         assert_eq!(a.tz_offset(), -420);
 
-        let line = b"<>".to_vec();
-        let mut c = Cursor::new(&line);
-        let a = Attribution::parse(&mut c).unwrap();
-
+        let a = Attribution::parse(b"<>").unwrap();
         assert_eq!(a.name(), "");
         assert_eq!(a.email(), "");
         assert_eq!(a.timestamp(), 0);
         assert_eq!(a.tz_offset(), 0);
 
-        let line = b" <>".to_vec();
-        let mut c = Cursor::new(&line);
-        let a = Attribution::parse(&mut c).unwrap();
-
+        let a = Attribution::parse(b" <>").unwrap();
         assert_eq!(a.name(), "");
         assert_eq!(a.email(), "");
         assert_eq!(a.timestamp(), 0);
         assert_eq!(a.tz_offset(), 0);
 
-        let line = b"<me@example.com>".to_vec();
-        let mut c = Cursor::new(&line);
-        let a = Attribution::parse(&mut c).unwrap();
-
+        let a = Attribution::parse(b"<me@example.com>").unwrap();
         assert_eq!(a.name(), "");
         assert_eq!(a.email(), "me@example.com");
         assert_eq!(a.timestamp(), 0);
         assert_eq!(a.tz_offset(), 0);
 
-        let line = b" <me@example.com>".to_vec();
-        let mut c = Cursor::new(&line);
-        let a = Attribution::parse(&mut c).unwrap();
-
+        let a = Attribution::parse(b" <me@example.com>").unwrap();
         assert_eq!(a.name(), "");
         assert_eq!(a.email(), "me@example.com");
         assert_eq!(a.timestamp(), 0);
         assert_eq!(a.tz_offset(), 0);
 
-        let line = b"Me <>".to_vec();
-        let mut c = Cursor::new(&line);
-        let a = Attribution::parse(&mut c).unwrap();
-
+        let a = Attribution::parse(b"Me <>").unwrap();
         assert_eq!(a.name(), "Me");
         assert_eq!(a.email(), "");
         assert_eq!(a.timestamp(), 0);
         assert_eq!(a.tz_offset(), 0);
 
-        let line = b"Me <me@example.com>".to_vec();
-        let mut c = Cursor::new(&line);
-        let a = Attribution::parse(&mut c).unwrap();
-
+        let a = Attribution::parse(b"Me <me@example.com>").unwrap();
         assert_eq!(a.name(), "Me");
         assert_eq!(a.email(), "me@example.com");
         assert_eq!(a.timestamp(), 0);
         assert_eq!(a.tz_offset(), 0);
 
-        let line = b"Me <me@example.com> 1234567890".to_vec();
-        let mut c = Cursor::new(&line);
-        let a = Attribution::parse(&mut c).unwrap();
-
+        let a = Attribution::parse(b"Me <me@example.com> 1234567890").unwrap();
         assert_eq!(a.name(), "Me");
         assert_eq!(a.email(), "me@example.com");
         assert_eq!(a.timestamp(), 0);
         assert_eq!(a.tz_offset(), 0);
 
-        let line = b"Me <me@example.com> 1234567890 ".to_vec();
-        let mut c = Cursor::new(&line);
-        let a = Attribution::parse(&mut c).unwrap();
-
+        let a = Attribution::parse(b"Me <me@example.com> 1234567890 ").unwrap();
         assert_eq!(a.name(), "Me");
         assert_eq!(a.email(), "me@example.com");
         assert_eq!(a.timestamp(), 0);
@@ -485,13 +408,8 @@ mod tests {
 
     #[test]
     fn parse_malformed_cases() {
-        let line = b"Me me@example.com> 1234567890 -0700".to_vec();
-        let mut c = Cursor::new(&line);
-        assert!(Attribution::parse(&mut c).is_none());
-
-        let line = b"Me <me@example.com 1234567890 -0700".to_vec();
-        let mut c = Cursor::new(&line);
-        assert!(Attribution::parse(&mut c).is_none());
+        assert!(Attribution::parse(b"Me me@example.com> 1234567890 -0700").is_none());
+        assert!(Attribution::parse(b"Me <me@example.com 1234567890 -0700").is_none());
     }
 
     #[test]
