@@ -3,7 +3,7 @@ use std::fs::{self, File};
 use std::io::{self, BufRead, BufReader, Error, ErrorKind};
 use std::path::{Path, PathBuf};
 
-use crate::ContentSource;
+use super::ContentSource;
 
 /// Implements `ContentSource` to read content from a file on disk.
 pub struct FileContentSource {
