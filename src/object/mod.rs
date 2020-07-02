@@ -20,6 +20,8 @@ pub use id::{Id, ParseIdError, ParseIdErrorKind};
 mod kind;
 pub use kind::Kind;
 
+pub(crate) mod parse_utils;
+
 /// Describes a single object stored (or about to be stored) in a git repository.
 ///
 /// This struct is constructed, modified, and shared as a working description of
