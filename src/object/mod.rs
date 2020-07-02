@@ -5,6 +5,9 @@ use std::io::{self, BufRead, BufReader};
 
 use sha1::{Digest, Sha1};
 
+mod attribution;
+pub use attribution::Attribution;
+
 mod content_source;
 pub use content_source::ContentSource;
 
