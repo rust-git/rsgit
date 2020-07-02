@@ -2,6 +2,8 @@ use std::fmt;
 use std::str::{self, FromStr};
 use std::string::String;
 
+use super::parse_utils::split_once;
+
 /// An `Attribution` combines a person's identity (name and e-mail address)
 /// with the timestamp for a particular action.
 ///
@@ -112,13 +114,6 @@ impl Attribution {
         let min = offset % 60;
 
         format!("{}{:02}{:02}", sign, hours, min)
-    }
-}
-
-fn split_once<'a>(s: &'a [u8], c: &u8) -> (&'a [u8], &'a [u8]) {
-    match s.iter().position(|b| b == c) {
-        Some(n) => (&s[0..n], &s[n + 1..]),
-        None => (s, &[]),
     }
 }
 
