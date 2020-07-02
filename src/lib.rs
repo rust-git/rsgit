@@ -1,6 +1,3 @@
-mod attribution;
-pub use attribution::Attribution;
-
 mod file_mode;
 pub use file_mode::FileMode;
 
