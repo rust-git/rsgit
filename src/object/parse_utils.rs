@@ -4,11 +4,17 @@ use std::io::{BufRead, Result};
 // consumed by upstream code.
 // https://github.com/rust-git/rsgit/issues/47
 
+// Read one line from input source.
+//
+// Return `true` if one or more bytes were read.
+// Return `false` if no bytes read (likely EOF).
 #[allow(dead_code)]
-pub(crate) fn read_line(b: &mut dyn BufRead, line: &mut Vec<u8>) -> Result<usize> {
+pub(crate) fn read_line(b: &mut dyn BufRead, line: &mut Vec<u8>) -> Result<bool> {
     line.clear();
 
-    b.read_until(10, line)?;
+    if b.read_until(10, line)? == 0 {
+        return Ok(false);
+    }
 
     if let Some(last) = line.last() {
         if last == &10 {
@@ -16,7 +22,7 @@ pub(crate) fn read_line(b: &mut dyn BufRead, line: &mut Vec<u8>) -> Result<usize
         }
     }
 
-    Ok(line.len())
+    Ok(true)
 }
 
 #[allow(dead_code)]
@@ -135,20 +141,32 @@ mod tests {
         let mut c = Cursor::new(&b"abc\ndef\n");
         let mut line: Vec<u8> = Vec::new();
 
-        assert_eq!(super::read_line(&mut c, &mut line).unwrap(), 3);
+        assert_eq!(super::read_line(&mut c, &mut line).unwrap(), true);
         assert_eq!(line.as_slice(), b"abc");
+
+        assert_eq!(super::read_line(&mut c, &mut line).unwrap(), true);
+        assert_eq!(line.as_slice(), b"def");
+
+        assert_eq!(super::read_line(&mut c, &mut line).unwrap(), false);
+        assert_eq!(line.as_slice(), b"");
 
         let mut c = Cursor::new(&b"abc\n");
         let mut line: Vec<u8> = Vec::new();
 
-        assert_eq!(super::read_line(&mut c, &mut line).unwrap(), 3);
+        assert_eq!(super::read_line(&mut c, &mut line).unwrap(), true);
         assert_eq!(line.as_slice(), b"abc");
+
+        assert_eq!(super::read_line(&mut c, &mut line).unwrap(), false);
+        assert_eq!(line.as_slice(), b"");
 
         let mut c = Cursor::new(&b"abc");
         let mut line: Vec<u8> = Vec::new();
 
-        assert_eq!(super::read_line(&mut c, &mut line).unwrap(), 3);
+        assert_eq!(super::read_line(&mut c, &mut line).unwrap(), true);
         assert_eq!(line.as_slice(), b"abc");
+
+        assert_eq!(super::read_line(&mut c, &mut line).unwrap(), false);
+        assert_eq!(line.as_slice(), b"");
     }
 
     #[test]
