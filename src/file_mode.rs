@@ -18,6 +18,23 @@ pub enum FileMode {
 }
 
 impl FileMode {
+    /// Convert a byte slice containing octal digits to `FileMode` enum.
+    ///
+    /// Returns `None` if the value is not one of the recognized contants
+    /// or does not parse as octal.
+    pub fn from_octal_slice(value: &[u8]) -> Option<FileMode> {
+        // There are so few values, why bother actually parsing the octal?
+        match value {
+            b"100644" => Some(FileMode::Normal),
+            b"100755" => Some(FileMode::Executable),
+            b"120000" => Some(FileMode::SymbolicLink),
+            b"40000" => Some(FileMode::Tree),
+            b"040000" => Some(FileMode::Tree),
+            b"160000" => Some(FileMode::Submodule),
+            _ => None,
+        }
+    }
+
     /// Convert from git file-mode integer to `FileMode` enum.
     ///
     /// Returns `None` if the value is not one of the recognized constants.
@@ -47,6 +64,28 @@ impl FileMode {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn from_octal_slice() {
+        assert_eq!(FileMode::from_octal_slice(b"100644").unwrap(), FileMode::Normal);
+        assert_eq!(
+            FileMode::from_octal_slice(b"100755").unwrap(),
+            FileMode::Executable
+        );
+        assert_eq!(
+            FileMode::from_octal_slice(b"120000").unwrap(),
+            FileMode::SymbolicLink
+        );
+        assert_eq!(FileMode::from_octal_slice(b"40000").unwrap(), FileMode::Tree);
+        assert_eq!(FileMode::from_octal_slice(b"040000").unwrap(), FileMode::Tree);
+        assert_eq!(
+            FileMode::from_octal_slice(b"160000").unwrap(),
+            FileMode::Submodule
+        );
+        assert!(FileMode::from_octal_slice(b"160001").is_none());
+        assert!(FileMode::from_octal_slice(b"0").is_none());
+        assert!(FileMode::from_octal_slice(b"100643").is_none());
+    }
 
     #[test]
     fn from_value() {
