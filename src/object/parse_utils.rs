@@ -64,6 +64,10 @@ pub(crate) fn attribution_is_valid(line: &[u8]) -> bool {
         _ => return false,
     }
 
+    if !tz[1..].iter().all(|&c| is_valid_decimal_digit(c)) {
+        return false;
+    }
+
     let tzsign = if tz[0] == b'+' { 1 } else { -1 };
 
     let hh = from_decimal_digit(tz[1]) * 10 + from_decimal_digit(tz[2]);
@@ -168,6 +172,12 @@ mod tests {
         assert_eq!(attribution_is_valid(b"A. U. Thor foo> 1 +0000"), false);
         assert_eq!(attribution_is_valid(b"1 +0000"), false);
         assert_eq!(attribution_is_valid(b"a <b> +0000"), false);
+        assert_eq!(attribution_is_valid(b"a <b> 1 ~0700"), false);
+        assert_eq!(attribution_is_valid(b"a <b> 1 +07x0"), false);
+        assert_eq!(attribution_is_valid(b"a <b> 1 +07"), false);
+        assert_eq!(attribution_is_valid(b"a <b> 1 +07000"), false);
+        assert_eq!(attribution_is_valid(b"a <b> 1 -1300"), false);
+        assert_eq!(attribution_is_valid(b"a <b> 1 +1500"), false);
         assert_eq!(attribution_is_valid(b"a <b>"), false);
         assert_eq!(attribution_is_valid(b"a <b> z"), false);
         assert_eq!(attribution_is_valid(b"a <b> 1 z"), false);
