@@ -152,6 +152,28 @@ mod tests {
     }
 
     #[test]
+    fn attribution_is_valid_fn() {
+        assert_eq!(
+            attribution_is_valid(b"A. U. Thor <author@localhost> 1 +0000"),
+            true
+        );
+        assert_eq!(
+            attribution_is_valid(b"A. U. Thor <author@localhost> 1222757360 -0730"),
+            true
+        );
+        assert_eq!(attribution_is_valid(b"<> 0 +0000"), true);
+
+        assert_eq!(attribution_is_valid(b"b <b@c> <b@c> 0 +0000"), false);
+        assert_eq!(attribution_is_valid(b"A. U. Thor <foo 1 +0000"), false);
+        assert_eq!(attribution_is_valid(b"A. U. Thor foo> 1 +0000"), false);
+        assert_eq!(attribution_is_valid(b"1 +0000"), false);
+        assert_eq!(attribution_is_valid(b"a <b> +0000"), false);
+        assert_eq!(attribution_is_valid(b"a <b>"), false);
+        assert_eq!(attribution_is_valid(b"a <b> z"), false);
+        assert_eq!(attribution_is_valid(b"a <b> 1 z"), false);
+    }
+
+    #[test]
     fn object_id_is_valid_fn() {
         assert_eq!(
             object_id_is_valid(b"0123456789012345678901234567890123456789"),
