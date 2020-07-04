@@ -88,11 +88,9 @@ fn is_valid_decimal_digit(c: u8) -> bool {
 }
 
 fn from_decimal_digit(digit: u8) -> i16 {
-    if digit >= 48 && digit <= 57 {
-        (digit as i16) - 48
-    } else {
-        0
-    }
+    // We've already invoked is_valid_decimal_digit
+    // on this digit, so no need to recheck.
+    (digit as i16) - 48
 }
 
 pub(crate) fn object_id_is_valid(name: &[u8]) -> bool {
@@ -173,6 +171,7 @@ mod tests {
         assert_eq!(attribution_is_valid(b"1 +0000"), false);
         assert_eq!(attribution_is_valid(b"a <b> +0000"), false);
         assert_eq!(attribution_is_valid(b"a <b> 1 ~0700"), false);
+        assert_eq!(attribution_is_valid(b"a <b> 1 +0760"), false);
         assert_eq!(attribution_is_valid(b"a <b> 1 +07x0"), false);
         assert_eq!(attribution_is_valid(b"a <b> 1 +07"), false);
         assert_eq!(attribution_is_valid(b"a <b> 1 +07000"), false);
