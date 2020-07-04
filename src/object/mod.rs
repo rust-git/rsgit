@@ -8,6 +8,9 @@ use sha1::{Digest, Sha1};
 mod attribution;
 pub use attribution::Attribution;
 
+// TO DO: Make pub(crate)
+pub mod check_commit;
+
 mod content_source;
 pub use content_source::ContentSource;
 
