@@ -67,7 +67,10 @@ mod tests {
 
     #[test]
     fn from_octal_slice() {
-        assert_eq!(FileMode::from_octal_slice(b"100644").unwrap(), FileMode::Normal);
+        assert_eq!(
+            FileMode::from_octal_slice(b"100644").unwrap(),
+            FileMode::Normal
+        );
         assert_eq!(
             FileMode::from_octal_slice(b"100755").unwrap(),
             FileMode::Executable
@@ -76,8 +79,14 @@ mod tests {
             FileMode::from_octal_slice(b"120000").unwrap(),
             FileMode::SymbolicLink
         );
-        assert_eq!(FileMode::from_octal_slice(b"40000").unwrap(), FileMode::Tree);
-        assert_eq!(FileMode::from_octal_slice(b"040000").unwrap(), FileMode::Tree);
+        assert_eq!(
+            FileMode::from_octal_slice(b"40000").unwrap(),
+            FileMode::Tree
+        );
+        assert_eq!(
+            FileMode::from_octal_slice(b"040000").unwrap(),
+            FileMode::Tree
+        );
         assert_eq!(
             FileMode::from_octal_slice(b"160000").unwrap(),
             FileMode::Submodule
