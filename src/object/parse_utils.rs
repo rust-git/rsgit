@@ -27,6 +27,70 @@ pub(crate) fn header<'a>(line: &'a [u8], name: &[u8]) -> Option<&'a [u8]> {
     }
 }
 
+pub(crate) fn attribution_is_valid(line: &[u8]) -> bool {
+    // Note that this parser is intentionally more strict
+    // than the one in Attribution::parse.
+    if !line.contains(&b'<') {
+        return false;
+    }
+    let (_name, line) = split_once(line, &b'<');
+
+    if !line.contains(&b'>') {
+        return false;
+    }
+    let (_email, line) = split_once(line, &b'>');
+
+    if !line.starts_with(b" ") {
+        return false;
+    }
+    let line = &line[1..];
+
+    if !line.contains(&b' ') {
+        return false;
+    }
+    let (time, tz) = split_once(line, &b' ');
+
+    if time.len() == 0 || !time.iter().all(|&c| is_valid_decimal_digit(c)) {
+        return false;
+    }
+
+    if tz.len() != 5 {
+        return false;
+    }
+
+    match tz[0] {
+        b'+' => (),
+        b'-' => (),
+        _ => return false,
+    }
+
+    let tzsign = if tz[0] == b'+' { 1 } else { -1 };
+
+    let hh = from_decimal_digit(tz[1]) * 10 + from_decimal_digit(tz[2]);
+    let mm = from_decimal_digit(tz[3]) * 10 + from_decimal_digit(tz[3]);
+    if mm > 59 {
+        return false;
+    }
+
+    let tz = tzsign * (hh * 60 + mm);
+    tz >= -720 && tz <= 840
+}
+
+fn is_valid_decimal_digit(c: u8) -> bool {
+    match c {
+        b'0'..=b'9' => true,
+        _ => false,
+    }
+}
+
+fn from_decimal_digit(digit: u8) -> i16 {
+    if digit >= 48 && digit <= 57 {
+        (digit as i16) - 48
+    } else {
+        0
+    }
+}
+
 pub(crate) fn object_id_is_valid(name: &[u8]) -> bool {
     if name.len() == 40 {
         name.iter().all(|&c| is_valid_hex_digit(c))
