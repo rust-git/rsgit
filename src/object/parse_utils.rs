@@ -1,5 +1,10 @@
 use std::io::{BufRead, Result};
 
+// TO DO: Remove #[allow(dead_code)] directives when parse_utils is
+// consumed by upstream code.
+// https://github.com/rust-git/rsgit/issues/47
+
+#[allow(dead_code)]
 pub(crate) fn read_line(b: &mut dyn BufRead, line: &mut Vec<u8>) -> Result<usize> {
     line.clear();
 
@@ -14,6 +19,7 @@ pub(crate) fn read_line(b: &mut dyn BufRead, line: &mut Vec<u8>) -> Result<usize
     Ok(line.len())
 }
 
+#[allow(dead_code)]
 pub(crate) fn header<'a>(line: &'a [u8], name: &[u8]) -> Option<&'a [u8]> {
     if line.contains(&b' ') {
         let (maybe_name, value) = split_once(line, &b' ');
@@ -27,6 +33,7 @@ pub(crate) fn header<'a>(line: &'a [u8], name: &[u8]) -> Option<&'a [u8]> {
     }
 }
 
+#[allow(dead_code)]
 pub(crate) fn attribution_is_valid(line: &[u8]) -> bool {
     // Note that this parser is intentionally more strict
     // than the one in Attribution::parse.
@@ -50,7 +57,7 @@ pub(crate) fn attribution_is_valid(line: &[u8]) -> bool {
     }
     let (time, tz) = split_once(line, &b' ');
 
-    if time.len() == 0 || !time.iter().all(|&c| is_valid_decimal_digit(c)) {
+    if time.is_empty() || !time.iter().all(|&c| is_valid_decimal_digit(c)) {
         return false;
     }
 
@@ -93,6 +100,7 @@ fn from_decimal_digit(digit: u8) -> i16 {
     (digit as i16) - 48
 }
 
+#[allow(dead_code)]
 pub(crate) fn object_id_is_valid(name: &[u8]) -> bool {
     if name.len() == 40 {
         name.iter().all(|&c| is_valid_hex_digit(c))
