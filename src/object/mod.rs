@@ -1,21 +1,19 @@
 //! Represents the git concept of an "object" which is a tuple of
 //! object type and binary data identified by the hash of the binary data.
 
-use std::io::{self, BufRead, BufReader};
-
 use sha1::{Digest, Sha1};
 
 mod attribution;
 pub use attribution::Attribution;
 
 mod content_source;
-pub use content_source::ContentSource;
+pub use content_source::{ContentSource, ContentSourceOpenResult, ContentSourceResult};
 
 mod file_content_source;
 pub use file_content_source::FileContentSource;
 
 mod id;
-pub use id::{Id, ParseIdError, ParseIdErrorKind};
+pub use id::{Id, ParseIdError};
 
 mod kind;
 pub use kind::Kind;
@@ -66,9 +64,8 @@ impl Object {
     }
 
     /// Returns a `BufRead` struct which can be used for reading the content.
-    pub fn open<'a>(&'a self) -> io::Result<Box<dyn BufRead + 'a>> {
-        let f = self.content_source.open()?;
-        Ok(Box::new(BufReader::new(f)))
+    pub fn open(&self) -> ContentSourceOpenResult {
+        self.content_source.open()
     }
 
     /// Computes the object's ID from its content, size, and type.
@@ -78,7 +75,7 @@ impl Object {
     /// This is functionally equivalent to the
     /// [`git hash-object`](https://git-scm.com/docs/git-hash-object) command
     /// without the `-w` option that would write the object to the repo.
-    pub fn assign_id(&mut self) -> io::Result<()> {
+    pub fn assign_id(&mut self) -> ContentSourceResult<()> {
         if self.id.is_none() {
             let mut hasher = Sha1::new();
 

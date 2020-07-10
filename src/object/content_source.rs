@@ -1,5 +1,15 @@
-use std::io::{BufRead, Cursor, Result};
+use std::io::{BufRead, Cursor};
 use std::vec::Vec;
+
+/// Result type for operations which depend on `ContentSource.open()`.
+/// Since `ContentSource` may wrap arbitrary sources,
+/// it could return any arbitrary error type.
+pub type ContentSourceResult<T> = std::result::Result<T, Box<dyn std::error::Error>>;
+
+/// Result type for `ContentSource.open()` call.
+/// Since `ContentSource` may wrap arbitrary sources,
+/// it could return any arbitrary error type.
+pub type ContentSourceOpenResult<'a> = ContentSourceResult<Box<dyn BufRead + 'a>>;
 
 /// Trait used for reading git object content from various sources.
 pub trait ContentSource {
@@ -15,7 +25,7 @@ pub trait ContentSource {
     }
 
     /// Returns a `Read` struct which can be used for reading the content.
-    fn open<'a>(&'a self) -> Result<Box<dyn BufRead + 'a>>;
+    fn open(&self) -> ContentSourceOpenResult;
 }
 
 impl ContentSource for Vec<u8> {
@@ -23,7 +33,7 @@ impl ContentSource for Vec<u8> {
         self.len()
     }
 
-    fn open<'x>(&'x self) -> Result<Box<dyn BufRead + 'x>> {
+    fn open(&self) -> ContentSourceOpenResult {
         Ok(Box::new(Cursor::new(self)))
     }
 }
@@ -33,7 +43,7 @@ impl ContentSource for String {
         self.len()
     }
 
-    fn open<'x>(&'x self) -> Result<Box<dyn BufRead + 'x>> {
+    fn open(&self) -> ContentSourceOpenResult {
         Ok(Box::new(Cursor::new(self.as_bytes())))
     }
 }
