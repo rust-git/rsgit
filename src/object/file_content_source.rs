@@ -1,9 +1,9 @@
 use std::convert::AsRef;
 use std::fs::{self, File};
-use std::io::{self, BufRead, BufReader, Error, ErrorKind};
+use std::io::{self, BufReader, Error, ErrorKind};
 use std::path::{Path, PathBuf};
 
-use super::ContentSource;
+use super::{ContentSource, ContentSourceOpenResult};
 
 /// Implements `ContentSource` to read content from a file on disk.
 pub struct FileContentSource {
@@ -32,7 +32,7 @@ impl ContentSource for FileContentSource {
         self.len
     }
 
-    fn open<'a>(&'a self) -> io::Result<Box<dyn BufRead + 'a>> {
+    fn open(&self) -> ContentSourceOpenResult {
         let f = File::open(&self.path)?;
         Ok(Box::new(BufReader::new(f)))
     }

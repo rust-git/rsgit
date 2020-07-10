@@ -1,5 +1,8 @@
 use std::result::Result;
 
+extern crate thiserror;
+use thiserror::Error;
+
 /// Represents a list of bytes (typically, but not necessarily UTF-8)
 /// that is a valid path in a git repo.
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -18,19 +21,42 @@ pub struct GitPathSegment<'a> {
 }
 
 /// Reasons why a given byte sequence can not be accepted as a git repo path.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Debug, Eq, Error, PartialEq)]
 pub enum GitPathError {
+    #[error("the path is empty")]
     EmptyPath,
+
+    #[error("the path begins with '/'")]
     AbsolutePath,
+
+    #[error("the path ends with '/'")]
     TrailingSlash,
+
+    #[error("the path contains adjacent '/' path separators")]
     DuplicateSlash,
+
+    #[error("the path segment contains '/'")]
     ContainsSlash,
-    ReservedName,
+
+    #[error("the path contains a reserved name `{}`", String::from_utf8_lossy(.0))]
+    ReservedName(Vec<u8>),
+
+    #[error("the path contains a NULL character")]
     ContainsNull,
-    ContainsInvalidWindowsCharacters,
-    InvalidWindowsNameEnding,
-    ReservedWindowsDeviceName,
+
+    #[error("the path contains the character `{0}`, which is not allowed on Windows")]
+    ContainsInvalidWindowsCharacter(char),
+
+    #[error("the path ends with `{0}`, which is not allowed on Windows")]
+    InvalidWindowsNameEnding(char),
+
+    #[error("the name `{}` is a reserved device name on Windows", String::from_utf8_lossy(.0))]
+    ReservedWindowsDeviceName(Vec<u8>),
+
+    #[error("the name contains Unicode characters which are ignorable")]
     ContainsIgnorableUnicodeCharacters,
+
+    #[error("the name contains incomplete Unicode characters")]
     ContainsIncompleteUnicodeCharacters,
 }
 
@@ -175,7 +201,7 @@ fn check_segment(segment: &[u8], platforms: &CheckPlatforms) -> Result<(), GitPa
             check_git_path_with_mac_ignorables(segment)?;
             check_truncated_utf8_for_mac(segment)?
         }
-        // TO DO: Way more to check here.
+
         Ok(())
     }
 }
@@ -189,7 +215,7 @@ fn check_git_reserved_name(segment: &[u8]) -> Result<(), GitPathError> {
     };
 
     if reserved {
-        Err(GitPathError::ReservedName)
+        Err(GitPathError::ReservedName(segment.to_owned()))
     } else {
         Ok(())
     }
@@ -233,7 +259,7 @@ fn check_windows_git_name(segment: &[u8]) -> Result<(), GitPathError> {
         segment_lc.clone_from_slice(segment);
         segment_lc.make_ascii_lowercase();
         if &segment_lc == b"git~1" {
-            Err(GitPathError::ReservedName)
+            Err(GitPathError::ReservedName(segment.to_owned()))
         } else {
             Ok(())
         }
@@ -258,7 +284,7 @@ fn check_windows_special_characters(segment: &[u8]) -> Result<(), GitPathError> 
         };
 
         if invalid {
-            return Err(GitPathError::ContainsInvalidWindowsCharacters);
+            return Err(GitPathError::ContainsInvalidWindowsCharacter(*c as char));
         }
     }
 
@@ -266,8 +292,10 @@ fn check_windows_special_characters(segment: &[u8]) -> Result<(), GitPathError> 
 }
 
 fn check_windows_segment_ending(segment: &[u8]) -> Result<(), GitPathError> {
-    if segment.ends_with(b".") || segment.ends_with(b" ") {
-        Err(GitPathError::InvalidWindowsNameEnding)
+    if segment.ends_with(b".") {
+        Err(GitPathError::InvalidWindowsNameEnding('.'))
+    } else if segment.ends_with(b" ") {
+        Err(GitPathError::InvalidWindowsNameEnding(' '))
     } else {
         Ok(())
     }
@@ -309,7 +337,7 @@ fn check_windows_device_name(segment: &[u8]) -> Result<(), GitPathError> {
             };
 
             if illegal {
-                Err(GitPathError::ReservedWindowsDeviceName)
+                Err(GitPathError::ReservedWindowsDeviceName(segment.to_owned()))
             } else {
                 Ok(())
             }
@@ -412,6 +440,7 @@ mod path_tests {
     use super::*;
 
     #[test]
+    #[cfg_attr(tarpaulin, skip)]
     fn basic_case() {
         // No platform-specific checks.
         assert_eq!(GitPath::new(b"").unwrap_err(), GitPathError::EmptyPath);
@@ -474,9 +503,13 @@ mod path_tests {
     ];
 
     #[test]
+    #[cfg_attr(tarpaulin, skip)]
     fn git_reserved_names() {
         for name in &GIT_RESERVED_NAMES {
-            assert_eq!(GitPath::new(name).unwrap_err(), GitPathError::ReservedName);
+            assert_eq!(
+                GitPath::new(name).unwrap_err(),
+                GitPathError::ReservedName(name.to_vec())
+            );
         }
 
         for name in &ALMOST_GIT_RESERVED_NAMES {
@@ -489,11 +522,15 @@ mod path_tests {
     const ALMOST_WINDOWS_GIT_NAMES: [&[u8]; 2] = [b"GIT~11", b"GIT~2"];
 
     #[test]
+    #[cfg_attr(tarpaulin, skip)]
     fn windows_variations_on_dot_git_name() {
         // This constraint applies to all platforms, since a ".git"-like name
         // on *any* platform will cause problems when moving to Windows.
         for name in &WINDOWS_GIT_NAMES {
-            assert_eq!(GitPath::new(name).unwrap_err(), GitPathError::ReservedName);
+            assert_eq!(
+                GitPath::new(name).unwrap_err(),
+                GitPathError::ReservedName(name.to_vec())
+            );
         }
 
         for name in &ALMOST_WINDOWS_GIT_NAMES {
@@ -525,6 +562,8 @@ mod path_tests {
             let a = GitPath::new(name).unwrap();
             assert_eq!(&a.path(), name);
 
+            let c = *(name.first().unwrap()) as char;
+
             assert_eq!(
                 GitPath::new_with_platform_checks(
                     name,
@@ -534,7 +573,7 @@ mod path_tests {
                     }
                 )
                 .unwrap_err(),
-                GitPathError::ContainsInvalidWindowsCharacters
+                GitPathError::ContainsInvalidWindowsCharacter(c)
             );
         }
 
@@ -547,6 +586,8 @@ mod path_tests {
             let a = GitPath::new(&name).unwrap();
             assert_eq!(a.path(), name.as_slice());
 
+            let c = *(n.first().unwrap()) as char;
+
             assert_eq!(
                 GitPath::new_with_platform_checks(
                     &name,
@@ -556,7 +597,7 @@ mod path_tests {
                     }
                 )
                 .unwrap_err(),
-                GitPathError::ContainsInvalidWindowsCharacters
+                GitPathError::ContainsInvalidWindowsCharacter(c)
             );
         }
 
@@ -579,6 +620,7 @@ mod path_tests {
     }
 
     #[test]
+    #[cfg_attr(tarpaulin, skip)]
     fn invalid_windows_name_ending() {
         let name = b"abc.";
         let a = GitPath::new(name).unwrap();
@@ -593,7 +635,7 @@ mod path_tests {
                 }
             )
             .unwrap_err(),
-            GitPathError::InvalidWindowsNameEnding
+            GitPathError::InvalidWindowsNameEnding('.')
         );
 
         let name = b"abc ";
@@ -609,7 +651,7 @@ mod path_tests {
                 }
             )
             .unwrap_err(),
-            GitPathError::InvalidWindowsNameEnding
+            GitPathError::InvalidWindowsNameEnding(' ')
         );
     }
 
@@ -621,6 +663,7 @@ mod path_tests {
     ];
 
     #[test]
+    #[cfg_attr(tarpaulin, skip)]
     fn invalid_windows_device_names() {
         for name in &WINDOWS_DEVICE_NAMES {
             let a = GitPath::new(name).unwrap();
@@ -635,7 +678,7 @@ mod path_tests {
                     }
                 )
                 .unwrap_err(),
-                GitPathError::ReservedWindowsDeviceName
+                GitPathError::ReservedWindowsDeviceName(name.to_vec())
             );
         }
 
@@ -823,6 +866,7 @@ mod path_segment_tests {
     use super::*;
 
     #[test]
+    #[cfg_attr(tarpaulin, skip)]
     fn basic_case() {
         // No platform-specific checks.
         assert_eq!(
@@ -885,11 +929,12 @@ mod path_segment_tests {
     ];
 
     #[test]
+    #[cfg_attr(tarpaulin, skip)]
     fn git_reserved_names() {
         for name in &GIT_RESERVED_NAMES {
             assert_eq!(
                 GitPathSegment::new(name).unwrap_err(),
-                GitPathError::ReservedName
+                GitPathError::ReservedName(name.to_vec())
             );
         }
 
@@ -903,13 +948,14 @@ mod path_segment_tests {
     const ALMOST_WINDOWS_GIT_NAMES: [&[u8]; 2] = [b"GIT~11", b"GIT~2"];
 
     #[test]
+    #[cfg_attr(tarpaulin, skip)]
     fn windows_variations_on_dot_git_name() {
         // This constraint applies to all platforms, since a ".git"-like name
         // on *any* platform will cause problems when moving to Windows.
         for name in &WINDOWS_GIT_NAMES {
             assert_eq!(
                 GitPathSegment::new(name).unwrap_err(),
-                GitPathError::ReservedName
+                GitPathError::ReservedName(name.to_vec())
             );
         }
 
@@ -942,6 +988,8 @@ mod path_segment_tests {
             let a = GitPathSegment::new(name).unwrap();
             assert_eq!(&a.path(), name);
 
+            let c = *(name.first().unwrap()) as char;
+
             assert_eq!(
                 GitPathSegment::new_with_platform_checks(
                     name,
@@ -951,7 +999,7 @@ mod path_segment_tests {
                     }
                 )
                 .unwrap_err(),
-                GitPathError::ContainsInvalidWindowsCharacters
+                GitPathError::ContainsInvalidWindowsCharacter(c)
             );
         }
 
@@ -964,6 +1012,8 @@ mod path_segment_tests {
             let a = GitPathSegment::new(&name).unwrap();
             assert_eq!(a.path(), name.as_slice());
 
+            let c = *(n.first().unwrap()) as char;
+
             assert_eq!(
                 GitPathSegment::new_with_platform_checks(
                     &name,
@@ -973,12 +1023,13 @@ mod path_segment_tests {
                     }
                 )
                 .unwrap_err(),
-                GitPathError::ContainsInvalidWindowsCharacters
+                GitPathError::ContainsInvalidWindowsCharacter(c)
             );
         }
     }
 
     #[test]
+    #[cfg_attr(tarpaulin, skip)]
     fn invalid_windows_name_ending() {
         let name = b"abc.";
         let a = GitPathSegment::new(name).unwrap();
@@ -993,7 +1044,7 @@ mod path_segment_tests {
                 }
             )
             .unwrap_err(),
-            GitPathError::InvalidWindowsNameEnding
+            GitPathError::InvalidWindowsNameEnding('.')
         );
 
         let name = b"abc ";
@@ -1009,7 +1060,7 @@ mod path_segment_tests {
                 }
             )
             .unwrap_err(),
-            GitPathError::InvalidWindowsNameEnding
+            GitPathError::InvalidWindowsNameEnding(' ')
         );
     }
 
@@ -1021,6 +1072,7 @@ mod path_segment_tests {
     ];
 
     #[test]
+    #[cfg_attr(tarpaulin, skip)]
     fn invalid_windows_device_names() {
         for name in &WINDOWS_DEVICE_NAMES {
             let a = GitPathSegment::new(name).unwrap();
@@ -1035,7 +1087,7 @@ mod path_segment_tests {
                     }
                 )
                 .unwrap_err(),
-                GitPathError::ReservedWindowsDeviceName
+                GitPathError::ReservedWindowsDeviceName(name.to_vec())
             );
         }
 
