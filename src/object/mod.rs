@@ -15,7 +15,7 @@ mod file_content_source;
 pub use file_content_source::FileContentSource;
 
 mod id;
-pub use id::{Id, ParseIdError, ParseIdErrorKind};
+pub use id::{Id, ParseIdError};
 
 mod kind;
 pub use kind::Kind;
