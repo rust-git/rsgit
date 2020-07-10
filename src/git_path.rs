@@ -503,6 +503,7 @@ mod path_tests {
     ];
 
     #[test]
+    #[cfg_attr(tarpaulin, skip)]
     fn git_reserved_names() {
         for name in &GIT_RESERVED_NAMES {
             assert_eq!(
