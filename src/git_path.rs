@@ -440,6 +440,7 @@ mod path_tests {
     use super::*;
 
     #[test]
+    #[cfg_attr(tarpaulin, skip)]
     fn basic_case() {
         // No platform-specific checks.
         assert_eq!(GitPath::new(b"").unwrap_err(), GitPathError::EmptyPath);
@@ -520,6 +521,7 @@ mod path_tests {
     const ALMOST_WINDOWS_GIT_NAMES: [&[u8]; 2] = [b"GIT~11", b"GIT~2"];
 
     #[test]
+    #[cfg_attr(tarpaulin, skip)]
     fn windows_variations_on_dot_git_name() {
         // This constraint applies to all platforms, since a ".git"-like name
         // on *any* platform will cause problems when moving to Windows.
@@ -660,6 +662,7 @@ mod path_tests {
     ];
 
     #[test]
+    #[cfg_attr(tarpaulin, skip)]
     fn invalid_windows_device_names() {
         for name in &WINDOWS_DEVICE_NAMES {
             let a = GitPath::new(name).unwrap();
@@ -925,6 +928,7 @@ mod path_segment_tests {
     ];
 
     #[test]
+    #[cfg_attr(tarpaulin, skip)]
     fn git_reserved_names() {
         for name in &GIT_RESERVED_NAMES {
             assert_eq!(
@@ -943,6 +947,7 @@ mod path_segment_tests {
     const ALMOST_WINDOWS_GIT_NAMES: [&[u8]; 2] = [b"GIT~11", b"GIT~2"];
 
     #[test]
+    #[cfg_attr(tarpaulin, skip)]
     fn windows_variations_on_dot_git_name() {
         // This constraint applies to all platforms, since a ".git"-like name
         // on *any* platform will cause problems when moving to Windows.
@@ -1066,6 +1071,7 @@ mod path_segment_tests {
     ];
 
     #[test]
+    #[cfg_attr(tarpaulin, skip)]
     fn invalid_windows_device_names() {
         for name in &WINDOWS_DEVICE_NAMES {
             let a = GitPathSegment::new(name).unwrap();
