@@ -617,6 +617,7 @@ mod path_tests {
     }
 
     #[test]
+    #[cfg_attr(tarpaulin, skip)]
     fn invalid_windows_name_ending() {
         let name = b"abc.";
         let a = GitPath::new(name).unwrap();
@@ -861,6 +862,7 @@ mod path_segment_tests {
     use super::*;
 
     #[test]
+    #[cfg_attr(tarpaulin, skip)]
     fn basic_case() {
         // No platform-specific checks.
         assert_eq!(
@@ -1021,6 +1023,7 @@ mod path_segment_tests {
     }
 
     #[test]
+    #[cfg_attr(tarpaulin, skip)]
     fn invalid_windows_name_ending() {
         let name = b"abc.";
         let a = GitPathSegment::new(name).unwrap();
