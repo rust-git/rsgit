@@ -1,9 +1,7 @@
-use super::{parse_utils, ContentSource};
-
-use std::io::Result;
+use super::{parse_utils, ContentSource, ContentSourceResult};
 
 // TO DO: make pub(crate)
-pub fn commit_is_valid(s: &dyn ContentSource) -> Result<bool> {
+pub fn commit_is_valid(s: &dyn ContentSource) -> ContentSourceResult<bool> {
     let mut r = s.open()?;
     let mut line = Vec::new();
 
