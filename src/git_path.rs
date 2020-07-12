@@ -355,7 +355,7 @@ fn check_git_path_with_mac_ignorables(segment: &[u8]) -> Result<(), GitPathError
 }
 
 fn check_truncated_utf8_for_mac(segment: &[u8]) -> Result<(), GitPathError> {
-    let tail3 = &segment[0.max(segment.len() - 2)..];
+    let tail3 = &segment[2.max(segment.len()) - 2..];
     if tail3.contains(&0xE2) || tail3.contains(&0xEF) {
         Err(GitPathError::ContainsIncompleteUnicodeCharacters)
     } else {
@@ -718,7 +718,7 @@ mod path_tests {
         ".git\u{FEFF}",
     ];
 
-    const ALMOST_MAC_HFS_GIT_NAMES: [&str; 3] = [".gi", ".git\u{200C}x", ".kit\u{200C}"];
+    const ALMOST_MAC_HFS_GIT_NAMES: [&str; 4] = ["g", ".gi", ".git\u{200C}x", ".kit\u{200C}"];
 
     #[test]
     fn mac_variations_on_dot_git_name() {
@@ -1127,7 +1127,7 @@ mod path_segment_tests {
         ".git\u{FEFF}",
     ];
 
-    const ALMOST_MAC_HFS_GIT_NAMES: [&str; 3] = [".gi", ".git\u{200C}x", ".kit\u{200C}"];
+    const ALMOST_MAC_HFS_GIT_NAMES: [&str; 4] = ["g", ".gi", ".git\u{200C}x", ".kit\u{200C}"];
 
     #[test]
     fn mac_variations_on_dot_git_name() {
