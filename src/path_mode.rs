@@ -4,7 +4,7 @@ use crate::file_mode::FileMode;
 
 /// Represents the tuple of git path (an uninterpreted sequence of bytes,
 /// not necessarily UTF-8) and git file mode. Used for comparisons.
-#[derive(Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq)]
 pub struct PathMode<'a> {
     pub path: &'a [u8],
     pub mode: FileMode,
@@ -35,7 +35,9 @@ impl<'a> PathMode<'a> {
             path: &self.path,
             mode: FileMode::Tree,
         };
-        core_compare(&self_as_tree, other)
+        let r = core_compare(&self_as_tree, other);
+        println!("csn {:?} {:?} {:?}", &self, r, &other);
+        r
     }
 }
 
