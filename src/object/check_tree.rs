@@ -46,6 +46,7 @@ pub fn tree_is_valid_with_platform_checks(
 
         if r.read_until(0, &mut this_line)? == 0 {
             // We've reached EOF: It's good.
+            // println!("OK, it's good");
             return Ok(true);
         }
 
@@ -64,11 +65,14 @@ pub fn tree_is_valid_with_platform_checks(
                     lc_path = lc_path.nfc().collect::<String>();
                 }
                 if lc_names.contains(&lc_path) {
+                    // println!("bailed @67");
                     return Ok(false);
                 }
                 lc_names.insert(lc_path);
             }
         }
+
+        // println!("ct @ 73");
 
         if !previous_line.is_empty() {
             let previous_line_slice = previous_line.as_slice();
@@ -80,10 +84,12 @@ pub fn tree_is_valid_with_platform_checks(
             // tricky.
 
             if this_path_mode.path == previous_path_mode.path {
+                // println!("bailed @ 85");
                 return Ok(false);
             }
 
             if this_path_mode.cmp(&previous_path_mode) != Ordering::Greater {
+                // println!("bailed @ 90");
                 return Ok(false);
             }
 
@@ -99,15 +105,30 @@ pub fn tree_is_valid_with_platform_checks(
                             maybe_lingering_trees.truncate(i);
                             break;
                         }
-                        Ordering::Equal => return Ok(false),
+                        Ordering::Equal => {
+                            // println!("bailed @ 105");
+                            return Ok(false);
+                        }
                         Ordering::Greater => (),
                     }
                 }
             }
 
+            // println!("loop @ 108");
+
+            // println!("@119 prev = {:?}", &previous_path_mode);
+            // println!("@119 this = {:?}", &this_path_mode);
+            // println!(
+            //     "@119  cmp = {:?}",
+            //     previous_path_mode.cmp_same_name(&this_path_mode)
+            // );
+
             match previous_path_mode.cmp_same_name(&this_path_mode) {
                 Ordering::Less => (),
-                Ordering::Equal => return Ok(false),
+                Ordering::Equal => {
+                    // println!("bailed @ 121");
+                    return Ok(false);
+                }
                 Ordering::Greater => {
                     maybe_lingering_trees.push(previous_path_mode.path.to_owned());
                 }
@@ -546,10 +567,17 @@ mod tests {
     }
 
     #[test]
-    fn invalid_duplicate_names_case_sensitive() {
-        let cs = quick_tree("100644 A", "100644 a");
-        assert_eq!(tree_is_valid(&cs).unwrap(), true);
+    fn invalid_duplicate_names_case_insensitive() {
+        let mut cs = String::new();
+        cs.push_str(&entry("100644 A"));
+        cs.push_str(&entry("100644 A.c"));
+        cs.push_str(&entry("100644 A.d"));
+        cs.push_str(&entry("100644 A.e"));
+        cs.push_str(&entry("40000 a"));
 
+        // assert_eq!(tree_is_valid(&cs).unwrap(), true);
+
+        // println!("test @ 563");
         assert_eq!(
             tree_is_valid_with_platform_checks(
                 &cs,
@@ -562,6 +590,7 @@ mod tests {
             false
         );
 
+        // println!("test @ 576");
         assert_eq!(
             tree_is_valid_with_platform_checks(
                 &cs,
