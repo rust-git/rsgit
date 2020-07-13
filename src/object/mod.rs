@@ -9,6 +9,7 @@ pub use attribution::Attribution;
 // TO DO: Make pub(crate)
 pub mod check_commit;
 pub mod check_tag;
+pub mod check_tree;
 
 mod content_source;
 pub use content_source::{ContentSource, ContentSourceOpenResult, ContentSourceResult};
