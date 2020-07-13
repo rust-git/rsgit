@@ -546,6 +546,36 @@ mod tests {
     }
 
     #[test]
+    fn invalid_duplicate_names_case_sensitive() {
+        let cs = quick_tree("100644 A", "100644 a");
+        assert_eq!(tree_is_valid(&cs).unwrap(), true);
+
+        assert_eq!(
+            tree_is_valid_with_platform_checks(
+                &cs,
+                &CheckPlatforms {
+                    windows: true,
+                    mac: false
+                }
+            )
+            .unwrap(),
+            false
+        );
+
+        assert_eq!(
+            tree_is_valid_with_platform_checks(
+                &cs,
+                &CheckPlatforms {
+                    windows: false,
+                    mac: true
+                }
+            )
+            .unwrap(),
+            false
+        );
+    }
+
+    #[test]
     fn invalid_tree_sorting() {
         let mut s = String::new();
         s.push_str(&entry("100644 a"));
