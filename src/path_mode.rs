@@ -35,9 +35,7 @@ impl<'a> PathMode<'a> {
             path: &self.path,
             mode: FileMode::Tree,
         };
-        let r = core_compare(&self_as_tree, other);
-        println!("csn {:?} {:?} {:?}", &self, r, &other);
-        r
+        core_compare(&self_as_tree, other)
     }
 }
 
