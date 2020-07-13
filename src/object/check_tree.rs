@@ -58,18 +58,15 @@ pub fn tree_is_valid_with_platform_checks(
         };
 
         if check_lc_names {
-            match String::from_utf8(this_path_mode.path.to_vec()) {
-                Ok(path) => {
-                    let mut lc_path = path.to_lowercase();
-                    if platforms.mac {
-                        lc_path = lc_path.nfc().collect::<String>();
-                    }
-                    if lc_names.contains(&lc_path) {
-                        return Ok(false);
-                    }
-                    lc_names.insert(lc_path);
+            if let Ok(path) = String::from_utf8(this_path_mode.path.to_vec()) {
+                let mut lc_path = path.to_lowercase();
+                if platforms.mac {
+                    lc_path = lc_path.nfc().collect::<String>();
                 }
-                _ => (),
+                if lc_names.contains(&lc_path) {
+                    return Ok(false);
+                }
+                lc_names.insert(lc_path);
             }
         }
 
