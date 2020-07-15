@@ -3,8 +3,14 @@
 
 use sha1::{Digest, Sha1};
 
+use crate::CheckPlatforms;
+
 mod attribution;
 pub use attribution::Attribution;
+
+mod check_commit;
+mod check_tag;
+mod check_tree;
 
 mod content_source;
 pub use content_source::{ContentSource, ContentSourceOpenResult, ContentSourceResult};
@@ -108,6 +114,39 @@ impl Object {
         }
 
         Ok(())
+    }
+
+    /// Returns true if the content of the object is valid for the type.
+    #[cfg_attr(tarpaulin, skip)]
+    pub fn is_valid(&self) -> ContentSourceResult<bool> {
+        // The match line is seen as executable but not covered.
+        // Does not compute.
+        match self.kind {
+            Kind::Blob => Ok(true),
+            Kind::Commit => check_commit::commit_is_valid(self.content_source.as_ref()),
+            Kind::Tag => check_tag::tag_is_valid(self.content_source.as_ref()),
+            Kind::Tree => check_tree::tree_is_valid(self.content_source.as_ref()),
+        }
+    }
+
+    /// Returns true if the content of the object is valid for the type
+    /// and the given platform's file system(s).
+    #[cfg_attr(tarpaulin, skip)]
+    pub fn is_valid_with_platform_checks(
+        &self,
+        platforms: &CheckPlatforms,
+    ) -> ContentSourceResult<bool> {
+        // The match and platforms line are seen as executable but not covered.
+        // Does not compute.
+        match self.kind {
+            Kind::Blob => Ok(true),
+            Kind::Commit => check_commit::commit_is_valid(self.content_source.as_ref()),
+            Kind::Tag => check_tag::tag_is_valid(self.content_source.as_ref()),
+            Kind::Tree => check_tree::tree_is_valid_with_platform_checks(
+                self.content_source.as_ref(),
+                platforms,
+            ),
+        }
     }
 }
 
@@ -276,5 +315,253 @@ mod tests {
         o.assign_id().unwrap();
 
         assert_eq!(o.id().as_ref().unwrap().to_string(), expected_id);
+    }
+
+    #[test]
+    fn check_blob_valid() {
+        let cs = "no such thing as an invalid blob".to_string();
+
+        let o = Object::new(Kind::Blob, Box::new(cs));
+        assert_eq!(o.is_valid().unwrap(), true);
+    }
+
+    #[test]
+    fn check_commit_valid_no_parent() {
+        let cs = "tree be9bfa841874ccc9f2ef7c48d0c76226f89b7189\n\
+                  author A. U. Thor <author@localhost> 1 +0000\n\
+                  committer A. U. Thor <author@localhost> 1 +0000\n"
+            .to_string();
+
+        let o = Object::new(Kind::Commit, Box::new(cs));
+        assert_eq!(o.is_valid().unwrap(), true);
+    }
+
+    #[test]
+    fn check_commit_valid_blank_author() {
+        let cs = "tree be9bfa841874ccc9f2ef7c48d0c76226f89b7189\n\
+                  author <> 0 +0000\n\
+                committer <> 0 +0000\n"
+            .to_string();
+
+        let o = Object::new(Kind::Commit, Box::new(cs));
+        assert_eq!(o.is_valid().unwrap(), true);
+    }
+
+    #[test]
+    fn check_commit_invalid_corrupt_attribution() {
+        let cs = "tree be9bfa841874ccc9f2ef7c48d0c76226f89b7189\n\
+                  author <> 0 +0000\n\
+                  committer b <b@c> <b@c> 0 +0000\n"
+            .to_string();
+
+        let o = Object::new(Kind::Commit, Box::new(cs));
+        assert_eq!(o.is_valid().unwrap(), false);
+    }
+
+    #[test]
+    fn check_tag_valid() {
+        let cs = "object be9bfa841874ccc9f2ef7c48d0c76226f89b7189\n\
+                  type commit\n\
+                  tag test-tag\n\
+                  tagger A. U. Thor <tagger@localhost> 1 +0000\n"
+            .to_string();
+
+        let o = Object::new(Kind::Tag, Box::new(cs));
+        assert_eq!(o.is_valid().unwrap(), true);
+    }
+
+    #[test]
+    fn check_tag_invalid_object() {
+        let cs = "object\tbe9bfa841874ccc9f2ef7c48d0c76226f89b7189\n".to_string();
+
+        let o = Object::new(Kind::Tag, Box::new(cs));
+        assert_eq!(o.is_valid().unwrap(), false);
+    }
+
+    const PLACEHOLDER_OBJECT_ID: &str =
+        "\0\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f\x10\x11\x12\x13";
+
+    fn entry(mode_name_str: &str) -> String {
+        entry_with_object_id(mode_name_str, PLACEHOLDER_OBJECT_ID)
+    }
+
+    fn entry_with_object_id(mode_name_str: &str, object_id: &str) -> String {
+        let mut r = String::new();
+        r.push_str(mode_name_str);
+        r.push('\0');
+
+        assert_eq!(object_id.len(), 20);
+        r.push_str(object_id);
+        r
+    }
+
+    #[test]
+    fn check_tree_valid_tree_one_entry() {
+        let cs = entry("100644 regular-file");
+
+        let o = Object::new(Kind::Tree, Box::new(cs));
+        assert_eq!(o.is_valid().unwrap(), true);
+    }
+
+    #[test]
+    fn check_tree_invalid_null_object_id() {
+        let cs = entry_with_object_id(
+            "100644 regular-file",
+            "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0",
+        );
+
+        let o = Object::new(Kind::Tree, Box::new(cs));
+        assert_eq!(o.is_valid().unwrap(), false);
+    }
+
+    #[test]
+    fn platform_check_blob_valid() {
+        let cs = "no such thing as an invalid blob".to_string();
+
+        let o = Object::new(Kind::Blob, Box::new(cs));
+        assert_eq!(
+            o.is_valid_with_platform_checks(&CheckPlatforms {
+                windows: false,
+                mac: true
+            })
+            .unwrap(),
+            true
+        );
+    }
+
+    #[test]
+    fn platform_check_commit_valid_no_parent() {
+        let cs = "tree be9bfa841874ccc9f2ef7c48d0c76226f89b7189\n\
+                  author A. U. Thor <author@localhost> 1 +0000\n\
+                  committer A. U. Thor <author@localhost> 1 +0000\n"
+            .to_string();
+
+        let o = Object::new(Kind::Commit, Box::new(cs));
+        assert_eq!(
+            o.is_valid_with_platform_checks(&CheckPlatforms {
+                windows: false,
+                mac: true
+            })
+            .unwrap(),
+            true
+        );
+    }
+
+    #[test]
+    fn platform_check_commit_valid_blank_author() {
+        let cs = "tree be9bfa841874ccc9f2ef7c48d0c76226f89b7189\n\
+                  author <> 0 +0000\n\
+                committer <> 0 +0000\n"
+            .to_string();
+
+        let o = Object::new(Kind::Commit, Box::new(cs));
+        assert_eq!(
+            o.is_valid_with_platform_checks(&CheckPlatforms {
+                windows: false,
+                mac: true
+            })
+            .unwrap(),
+            true
+        );
+    }
+
+    #[test]
+    fn platform_check_commit_invalid_corrupt_attribution() {
+        let cs = "tree be9bfa841874ccc9f2ef7c48d0c76226f89b7189\n\
+                  author <> 0 +0000\n\
+                  committer b <b@c> <b@c> 0 +0000\n"
+            .to_string();
+
+        let o = Object::new(Kind::Commit, Box::new(cs));
+        assert_eq!(
+            o.is_valid_with_platform_checks(&CheckPlatforms {
+                windows: false,
+                mac: true
+            })
+            .unwrap(),
+            false
+        );
+    }
+
+    #[test]
+    fn platform_check_tag_valid() {
+        let cs = "object be9bfa841874ccc9f2ef7c48d0c76226f89b7189\n\
+                  type commit\n\
+                  tag test-tag\n\
+                  tagger A. U. Thor <tagger@localhost> 1 +0000\n"
+            .to_string();
+
+        let o = Object::new(Kind::Tag, Box::new(cs));
+        assert_eq!(
+            o.is_valid_with_platform_checks(&CheckPlatforms {
+                windows: false,
+                mac: true
+            })
+            .unwrap(),
+            true
+        );
+    }
+
+    #[test]
+    fn platform_check_tag_invalid_object() {
+        let cs = "object\tbe9bfa841874ccc9f2ef7c48d0c76226f89b7189\n".to_string();
+
+        let o = Object::new(Kind::Tag, Box::new(cs));
+        assert_eq!(
+            o.is_valid_with_platform_checks(&CheckPlatforms {
+                windows: false,
+                mac: true
+            })
+            .unwrap(),
+            false
+        );
+    }
+
+    #[test]
+    fn platform_check_tree_valid_tree_one_entry() {
+        let cs = entry("100644 regular-file");
+
+        let o = Object::new(Kind::Tree, Box::new(cs));
+        assert_eq!(
+            o.is_valid_with_platform_checks(&CheckPlatforms {
+                windows: false,
+                mac: false
+            })
+            .unwrap(),
+            true
+        );
+    }
+
+    #[test]
+    fn platform_check_tree_invalid_null_object_id() {
+        let cs = entry_with_object_id(
+            "100644 regular-file",
+            "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0",
+        );
+
+        let o = Object::new(Kind::Tree, Box::new(cs));
+        assert_eq!(
+            o.is_valid_with_platform_checks(&CheckPlatforms {
+                windows: false,
+                mac: false
+            })
+            .unwrap(),
+            false
+        );
+    }
+
+    #[test]
+    fn platform_check_tree_windows_dot_at_end_of_name() {
+        let cs = entry(&"100644 test.".to_string());
+
+        let o = Object::new(Kind::Tree, Box::new(cs));
+        assert_eq!(
+            o.is_valid_with_platform_checks(&CheckPlatforms {
+                windows: true,
+                mac: false
+            })
+            .unwrap(),
+            false
+        );
     }
 }

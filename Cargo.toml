@@ -8,6 +8,7 @@ edition = "2018"
 sha-1 = "0.9.0"
 tempfile = "3.1.0"
 thiserror = "1.0.20"
+unicode-normalization = "0.1.13"
 
 [dev-dependencies]
 dir-diff = "0.3.2"
