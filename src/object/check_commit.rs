@@ -1,7 +1,6 @@
 use super::{parse_utils, ContentSource, ContentSourceResult};
 
-// TO DO: make pub(crate)
-pub fn commit_is_valid(s: &dyn ContentSource) -> ContentSourceResult<bool> {
+pub(crate) fn commit_is_valid(s: &dyn ContentSource) -> ContentSourceResult<bool> {
     let mut r = s.open()?;
     let mut line = Vec::new();
 

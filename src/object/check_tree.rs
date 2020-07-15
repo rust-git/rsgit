@@ -9,8 +9,7 @@ use std::io::BufRead;
 extern crate unicode_normalization;
 use unicode_normalization::UnicodeNormalization;
 
-// TO DO: make pub(crate)
-pub fn tree_is_valid(s: &dyn ContentSource) -> ContentSourceResult<bool> {
+pub(crate) fn tree_is_valid(s: &dyn ContentSource) -> ContentSourceResult<bool> {
     tree_is_valid_with_platform_checks(
         s,
         &CheckPlatforms {
@@ -20,7 +19,7 @@ pub fn tree_is_valid(s: &dyn ContentSource) -> ContentSourceResult<bool> {
     )
 }
 
-pub fn tree_is_valid_with_platform_checks(
+pub(crate) fn tree_is_valid_with_platform_checks(
     s: &dyn ContentSource,
     platforms: &CheckPlatforms,
 ) -> ContentSourceResult<bool> {
