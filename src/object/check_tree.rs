@@ -1,6 +1,6 @@
 use super::{parse_utils, ContentSource, ContentSourceResult};
 
-use crate::{CheckPlatforms, FileMode, GitPathSegment, PathMode};
+use crate::path::{CheckPlatforms, FileMode, PathMode, PathSegment};
 
 use std::cmp::Ordering;
 use std::collections::HashSet;
@@ -148,7 +148,7 @@ fn parse_path_mode<'a>(line: &'a &[u8], platforms: &CheckPlatforms) -> Option<Pa
     }
 
     let (path, _) = parse_utils::split_once(path, &0);
-    if GitPathSegment::new_with_platform_checks(path, platforms).is_err() {
+    if PathSegment::new_with_platform_checks(path, platforms).is_err() {
         return None;
     }
 

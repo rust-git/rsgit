@@ -3,26 +3,32 @@ use std::result::Result;
 extern crate thiserror;
 use thiserror::Error;
 
+mod file_mode;
+pub use file_mode::FileMode;
+
+mod path_mode;
+pub use path_mode::PathMode;
+
 /// Represents a list of bytes (typically, but not necessarily UTF-8)
 /// that is a valid path in a git repo.
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct GitPath<'a> {
+pub struct Path<'a> {
     path: &'a [u8],
     checked_platforms: CheckPlatforms,
 }
 
 /// Represents a list of bytes (typically, but not necessarily UTF-8)
-/// that is a valid path *segment* in a git repo. (Unlike `GitPath`,
-/// a `GitPathSegment` may not contain a `/` character.)
+/// that is a valid path *segment* in a git repo. (Unlike `Path`,
+/// a `PathSegment` may not contain a `/` character.)
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct GitPathSegment<'a> {
+pub struct PathSegment<'a> {
     path: &'a [u8],
     checked_platforms: CheckPlatforms,
 }
 
 /// Reasons why a given byte sequence can not be accepted as a git repo path.
 #[derive(Debug, Eq, Error, PartialEq)]
-pub enum GitPathError {
+pub enum PathError {
     #[error("the path is empty")]
     EmptyPath,
 
@@ -67,16 +73,16 @@ pub struct CheckPlatforms {
     pub mac: bool,
 }
 
-impl<'a> GitPath<'a> {
-    /// Convert the provided byte vector to a `GitPath` struct if it is acceptable
+impl<'a> Path<'a> {
+    /// Convert the provided byte vector to a `Path` struct if it is acceptable
     /// as a git path. The rules enforced here are slightly different from what
     /// is allowed in a `tree` object in that we allow `/` characters to build
     /// hierarchical paths.
     #[cfg_attr(tarpaulin, skip)]
-    pub fn new(path: &'a [u8]) -> Result<GitPath<'a>, GitPathError> {
+    pub fn new(path: &'a [u8]) -> Result<Path<'a>, PathError> {
         // Argh. `cargo fmt` reformats this into a format that generates
         // "coverage" for some of the arguments below, but not all.
-        GitPath::new_with_platform_checks(
+        Path::new_with_platform_checks(
             path,
             &CheckPlatforms {
                 windows: false,
@@ -85,18 +91,18 @@ impl<'a> GitPath<'a> {
         )
     }
 
-    /// Convert the provided byte vector to a `GitPath` struct if it is acceptable
+    /// Convert the provided byte vector to a `Path` struct if it is acceptable
     /// as a git path. In addition to the typical constraints enforced via `new()`,
     /// also check platform-specific rules.
     #[cfg_attr(tarpaulin, skip)]
     pub fn new_with_platform_checks(
         path: &'a [u8],
         platforms: &CheckPlatforms,
-    ) -> Result<GitPath<'a>, GitPathError> {
+    ) -> Result<Path<'a>, PathError> {
         // Argh. `cargo fmt` reformats this into a format that generates
         // "coverage" for some of the arguments below, but not all.
         match check_path(path, platforms) {
-            Ok(()) => Ok(GitPath {
+            Ok(()) => Ok(Path {
                 path,
                 checked_platforms: platforms.clone(),
             }),
@@ -115,15 +121,15 @@ impl<'a> GitPath<'a> {
     }
 }
 
-impl<'a> GitPathSegment<'a> {
-    /// Convert the provided byte vector to a `GitPathSegment` struct if it is
+impl<'a> PathSegment<'a> {
+    /// Convert the provided byte vector to a `PathSegment` struct if it is
     /// acceptable as a git path segment. Similarly to a `tree` object, we do not
     /// allow `/` characters.
     #[cfg_attr(tarpaulin, skip)]
-    pub fn new(path: &'a [u8]) -> Result<GitPathSegment<'a>, GitPathError> {
+    pub fn new(path: &'a [u8]) -> Result<PathSegment<'a>, PathError> {
         // Argh. `cargo fmt` reformats this into a format that generates
         // "coverage" for some of the arguments below, but not all.
-        GitPathSegment::new_with_platform_checks(
+        PathSegment::new_with_platform_checks(
             path,
             &CheckPlatforms {
                 windows: false,
@@ -132,18 +138,18 @@ impl<'a> GitPathSegment<'a> {
         )
     }
 
-    /// Convert the provided byte vector to a `GitPathSegment` struct if it is acceptable
+    /// Convert the provided byte vector to a `PathSegment` struct if it is acceptable
     /// as a git path. In addition to the typical constraints enforced via `new()`,
     /// also check platform-specific rules.
     #[cfg_attr(tarpaulin, skip)]
     pub fn new_with_platform_checks(
         path: &'a [u8],
         platforms: &CheckPlatforms,
-    ) -> Result<GitPathSegment<'a>, GitPathError> {
+    ) -> Result<PathSegment<'a>, PathError> {
         // Argh. `cargo fmt` reformats this into a format that generates
         // "coverage" for some of the arguments below, but not all.
         match check_segment(path, platforms) {
-            Ok(()) => Ok(GitPathSegment {
+            Ok(()) => Ok(PathSegment {
                 path,
                 checked_platforms: platforms.clone(),
             }),
@@ -162,17 +168,17 @@ impl<'a> GitPathSegment<'a> {
     }
 }
 
-fn check_path(path: &[u8], platforms: &CheckPlatforms) -> Result<(), GitPathError> {
+fn check_path(path: &[u8], platforms: &CheckPlatforms) -> Result<(), PathError> {
     if path.is_empty() {
-        Err(GitPathError::EmptyPath)
+        Err(PathError::EmptyPath)
     } else if path.starts_with(b"/") {
-        Err(GitPathError::AbsolutePath)
+        Err(PathError::AbsolutePath)
     } else if path.ends_with(b"/") {
-        Err(GitPathError::TrailingSlash)
+        Err(PathError::TrailingSlash)
     } else {
         for segment in path.split(|c| *c == 47) {
             match check_segment(segment, platforms) {
-                Err(GitPathError::EmptyPath) => Err(GitPathError::DuplicateSlash),
+                Err(PathError::EmptyPath) => Err(PathError::DuplicateSlash),
                 x => x,
             }?;
         }
@@ -180,13 +186,13 @@ fn check_path(path: &[u8], platforms: &CheckPlatforms) -> Result<(), GitPathErro
     }
 }
 
-fn check_segment(segment: &[u8], platforms: &CheckPlatforms) -> Result<(), GitPathError> {
+fn check_segment(segment: &[u8], platforms: &CheckPlatforms) -> Result<(), PathError> {
     if segment.is_empty() {
-        Err(GitPathError::EmptyPath)
+        Err(PathError::EmptyPath)
     } else if segment.contains(&0) {
-        Err(GitPathError::ContainsNull)
+        Err(PathError::ContainsNull)
     } else if segment.contains(&47) {
-        Err(GitPathError::ContainsSlash)
+        Err(PathError::ContainsSlash)
     } else {
         check_git_reserved_name(segment)?;
         check_windows_git_name(segment)?;
@@ -206,7 +212,7 @@ fn check_segment(segment: &[u8], platforms: &CheckPlatforms) -> Result<(), GitPa
     }
 }
 
-fn check_git_reserved_name(segment: &[u8]) -> Result<(), GitPathError> {
+fn check_git_reserved_name(segment: &[u8]) -> Result<(), PathError> {
     let reserved = match segment {
         b"." => true,
         b".." => true,
@@ -215,7 +221,7 @@ fn check_git_reserved_name(segment: &[u8]) -> Result<(), GitPathError> {
     };
 
     if reserved {
-        Err(GitPathError::ReservedName(segment.to_owned()))
+        Err(PathError::ReservedName(segment.to_owned()))
     } else {
         Ok(())
     }
@@ -253,13 +259,13 @@ fn is_normalized_git(segment: &[u8]) -> bool {
     }
 }
 
-fn check_windows_git_name(segment: &[u8]) -> Result<(), GitPathError> {
+fn check_windows_git_name(segment: &[u8]) -> Result<(), PathError> {
     if segment.len() == 5 {
         let mut segment_lc: [u8; 5] = [0u8; 5];
         segment_lc.clone_from_slice(segment);
         segment_lc.make_ascii_lowercase();
         if &segment_lc == b"git~1" {
-            Err(GitPathError::ReservedName(segment.to_owned()))
+            Err(PathError::ReservedName(segment.to_owned()))
         } else {
             Ok(())
         }
@@ -268,7 +274,7 @@ fn check_windows_git_name(segment: &[u8]) -> Result<(), GitPathError> {
     }
 }
 
-fn check_windows_special_characters(segment: &[u8]) -> Result<(), GitPathError> {
+fn check_windows_special_characters(segment: &[u8]) -> Result<(), PathError> {
     for c in segment {
         let invalid = match c {
             b'"' => true,
@@ -284,25 +290,25 @@ fn check_windows_special_characters(segment: &[u8]) -> Result<(), GitPathError> 
         };
 
         if invalid {
-            return Err(GitPathError::ContainsInvalidWindowsCharacter(*c as char));
+            return Err(PathError::ContainsInvalidWindowsCharacter(*c as char));
         }
     }
 
     Ok(())
 }
 
-fn check_windows_segment_ending(segment: &[u8]) -> Result<(), GitPathError> {
+fn check_windows_segment_ending(segment: &[u8]) -> Result<(), PathError> {
     if segment.ends_with(b".") {
-        Err(GitPathError::InvalidWindowsNameEnding('.'))
+        Err(PathError::InvalidWindowsNameEnding('.'))
     } else if segment.ends_with(b" ") {
-        Err(GitPathError::InvalidWindowsNameEnding(' '))
+        Err(PathError::InvalidWindowsNameEnding(' '))
     } else {
         Ok(())
     }
 }
 
 #[cfg_attr(tarpaulin, skip)]
-fn check_windows_device_name(segment: &[u8]) -> Result<(), GitPathError> {
+fn check_windows_device_name(segment: &[u8]) -> Result<(), PathError> {
     // Coverage skip justification: We have to cover the `None` case,
     // but we know it will never happen because we earlier test for
     // and bail out if the segment name is empty.
@@ -337,7 +343,7 @@ fn check_windows_device_name(segment: &[u8]) -> Result<(), GitPathError> {
             };
 
             if illegal {
-                Err(GitPathError::ReservedWindowsDeviceName(segment.to_owned()))
+                Err(PathError::ReservedWindowsDeviceName(segment.to_owned()))
             } else {
                 Ok(())
             }
@@ -346,18 +352,18 @@ fn check_windows_device_name(segment: &[u8]) -> Result<(), GitPathError> {
     }
 }
 
-fn check_git_path_with_mac_ignorables(segment: &[u8]) -> Result<(), GitPathError> {
+fn check_git_path_with_mac_ignorables(segment: &[u8]) -> Result<(), PathError> {
     if match_mac_hfs_path(segment, b".git") {
-        Err(GitPathError::ContainsIgnorableUnicodeCharacters)
+        Err(PathError::ContainsIgnorableUnicodeCharacters)
     } else {
         Ok(())
     }
 }
 
-fn check_truncated_utf8_for_mac(segment: &[u8]) -> Result<(), GitPathError> {
+fn check_truncated_utf8_for_mac(segment: &[u8]) -> Result<(), PathError> {
     let tail3 = &segment[2.max(segment.len()) - 2..];
     if tail3.contains(&0xE2) || tail3.contains(&0xEF) {
-        Err(GitPathError::ContainsIncompleteUnicodeCharacters)
+        Err(PathError::ContainsIncompleteUnicodeCharacters)
     } else {
         Ok(())
     }
@@ -443,9 +449,9 @@ mod path_tests {
     #[cfg_attr(tarpaulin, skip)]
     fn basic_case() {
         // No platform-specific checks.
-        assert_eq!(GitPath::new(b"").unwrap_err(), GitPathError::EmptyPath);
+        assert_eq!(Path::new(b"").unwrap_err(), PathError::EmptyPath);
 
-        let a = GitPath::new(b"a").unwrap();
+        let a = Path::new(b"a").unwrap();
         assert_eq!(a.path(), b"a");
         assert_eq!(
             a.checked_platforms(),
@@ -455,36 +461,27 @@ mod path_tests {
             }
         );
 
-        let a = GitPath::new(b"a/b").unwrap();
+        let a = Path::new(b"a/b").unwrap();
         assert_eq!(a.path(), b"a/b");
 
-        assert_eq!(
-            GitPath::new(b"a//b").unwrap_err(),
-            GitPathError::DuplicateSlash
-        );
+        assert_eq!(Path::new(b"a//b").unwrap_err(), PathError::DuplicateSlash);
 
-        assert_eq!(GitPath::new(b"/a").unwrap_err(), GitPathError::AbsolutePath);
+        assert_eq!(Path::new(b"/a").unwrap_err(), PathError::AbsolutePath);
 
-        assert_eq!(
-            GitPath::new(b"a\0b").unwrap_err(),
-            GitPathError::ContainsNull
-        );
+        assert_eq!(Path::new(b"a\0b").unwrap_err(), PathError::ContainsNull);
 
-        let a = GitPath::new(b"ab/cd/ef").unwrap();
+        let a = Path::new(b"ab/cd/ef").unwrap();
         assert_eq!(a.path(), b"ab/cd/ef");
 
         assert_eq!(
-            GitPath::new(b"ab/cd//ef").unwrap_err(),
-            GitPathError::DuplicateSlash
+            Path::new(b"ab/cd//ef").unwrap_err(),
+            PathError::DuplicateSlash
         );
 
+        assert_eq!(Path::new(b"a/").unwrap_err(), PathError::TrailingSlash);
         assert_eq!(
-            GitPath::new(b"a/").unwrap_err(),
-            GitPathError::TrailingSlash
-        );
-        assert_eq!(
-            GitPath::new(b"ab/cd/ef/").unwrap_err(),
-            GitPathError::TrailingSlash
+            Path::new(b"ab/cd/ef/").unwrap_err(),
+            PathError::TrailingSlash
         );
     }
 
@@ -507,13 +504,13 @@ mod path_tests {
     fn git_reserved_names() {
         for name in &GIT_RESERVED_NAMES {
             assert_eq!(
-                GitPath::new(name).unwrap_err(),
-                GitPathError::ReservedName(name.to_vec())
+                Path::new(name).unwrap_err(),
+                PathError::ReservedName(name.to_vec())
             );
         }
 
         for name in &ALMOST_GIT_RESERVED_NAMES {
-            let a = GitPath::new(name).unwrap();
+            let a = Path::new(name).unwrap();
             assert_eq!(&a.path(), name);
         }
     }
@@ -528,13 +525,13 @@ mod path_tests {
         // on *any* platform will cause problems when moving to Windows.
         for name in &WINDOWS_GIT_NAMES {
             assert_eq!(
-                GitPath::new(name).unwrap_err(),
-                GitPathError::ReservedName(name.to_vec())
+                Path::new(name).unwrap_err(),
+                PathError::ReservedName(name.to_vec())
             );
         }
 
         for name in &ALMOST_WINDOWS_GIT_NAMES {
-            let a = GitPath::new(name).unwrap();
+            let a = Path::new(name).unwrap();
             assert_eq!(&a.path(), name);
         }
     }
@@ -559,13 +556,13 @@ mod path_tests {
     #[test]
     fn invalid_windows_characters() {
         for name in &INVALID_WINDOWS_PATHS {
-            let a = GitPath::new(name).unwrap();
+            let a = Path::new(name).unwrap();
             assert_eq!(&a.path(), name);
 
             let c = *(name.first().unwrap()) as char;
 
             assert_eq!(
-                GitPath::new_with_platform_checks(
+                Path::new_with_platform_checks(
                     name,
                     &CheckPlatforms {
                         windows: true,
@@ -573,7 +570,7 @@ mod path_tests {
                     }
                 )
                 .unwrap_err(),
-                GitPathError::ContainsInvalidWindowsCharacter(c)
+                PathError::ContainsInvalidWindowsCharacter(c)
             );
         }
 
@@ -583,13 +580,13 @@ mod path_tests {
             name.extend_from_slice(n);
             name.push(b'b');
 
-            let a = GitPath::new(&name).unwrap();
+            let a = Path::new(&name).unwrap();
             assert_eq!(a.path(), name.as_slice());
 
             let c = *(n.first().unwrap()) as char;
 
             assert_eq!(
-                GitPath::new_with_platform_checks(
+                Path::new_with_platform_checks(
                     &name,
                     &CheckPlatforms {
                         windows: true,
@@ -597,11 +594,11 @@ mod path_tests {
                     }
                 )
                 .unwrap_err(),
-                GitPathError::ContainsInvalidWindowsCharacter(c)
+                PathError::ContainsInvalidWindowsCharacter(c)
             );
         }
 
-        let a = GitPath::new_with_platform_checks(
+        let a = Path::new_with_platform_checks(
             b"ab/cd/ef",
             &CheckPlatforms {
                 windows: true,
@@ -623,11 +620,11 @@ mod path_tests {
     #[cfg_attr(tarpaulin, skip)]
     fn invalid_windows_name_ending() {
         let name = b"abc.";
-        let a = GitPath::new(name).unwrap();
+        let a = Path::new(name).unwrap();
         assert_eq!(&a.path(), name);
 
         assert_eq!(
-            GitPath::new_with_platform_checks(
+            Path::new_with_platform_checks(
                 name,
                 &CheckPlatforms {
                     windows: true,
@@ -635,15 +632,15 @@ mod path_tests {
                 }
             )
             .unwrap_err(),
-            GitPathError::InvalidWindowsNameEnding('.')
+            PathError::InvalidWindowsNameEnding('.')
         );
 
         let name = b"abc ";
-        let a = GitPath::new(name).unwrap();
+        let a = Path::new(name).unwrap();
         assert_eq!(&a.path(), name);
 
         assert_eq!(
-            GitPath::new_with_platform_checks(
+            Path::new_with_platform_checks(
                 name,
                 &CheckPlatforms {
                     windows: true,
@@ -651,7 +648,7 @@ mod path_tests {
                 }
             )
             .unwrap_err(),
-            GitPathError::InvalidWindowsNameEnding(' ')
+            PathError::InvalidWindowsNameEnding(' ')
         );
     }
 
@@ -666,11 +663,11 @@ mod path_tests {
     #[cfg_attr(tarpaulin, skip)]
     fn invalid_windows_device_names() {
         for name in &WINDOWS_DEVICE_NAMES {
-            let a = GitPath::new(name).unwrap();
+            let a = Path::new(name).unwrap();
             assert_eq!(&a.path(), name);
 
             assert_eq!(
-                GitPath::new_with_platform_checks(
+                Path::new_with_platform_checks(
                     name,
                     &CheckPlatforms {
                         windows: true,
@@ -678,15 +675,15 @@ mod path_tests {
                     }
                 )
                 .unwrap_err(),
-                GitPathError::ReservedWindowsDeviceName(name.to_vec())
+                PathError::ReservedWindowsDeviceName(name.to_vec())
             );
         }
 
         for name in &ALMOST_WINDOWS_DEVICE_NAMES {
-            let a = GitPath::new(name).unwrap();
+            let a = Path::new(name).unwrap();
             assert_eq!(&a.path(), name);
 
-            let a = GitPath::new_with_platform_checks(
+            let a = Path::new_with_platform_checks(
                 &name,
                 &CheckPlatforms {
                     windows: true,
@@ -725,11 +722,11 @@ mod path_tests {
         for name in &MAC_HFS_GIT_NAMES {
             let name = name.as_bytes();
 
-            let a = GitPath::new(name).unwrap();
+            let a = Path::new(name).unwrap();
             assert_eq!(&a.path(), &name);
 
             assert_eq!(
-                GitPath::new_with_platform_checks(
+                Path::new_with_platform_checks(
                     name,
                     &CheckPlatforms {
                         windows: false,
@@ -737,17 +734,17 @@ mod path_tests {
                     }
                 )
                 .unwrap_err(),
-                GitPathError::ContainsIgnorableUnicodeCharacters
+                PathError::ContainsIgnorableUnicodeCharacters
             );
         }
 
         for name in &ALMOST_MAC_HFS_GIT_NAMES {
             let name = name.as_bytes();
 
-            let a = GitPath::new(name).unwrap();
+            let a = Path::new(name).unwrap();
             assert_eq!(&a.path(), &name);
 
-            let a = GitPath::new_with_platform_checks(
+            let a = Path::new_with_platform_checks(
                 name,
                 &CheckPlatforms {
                     windows: false,
@@ -769,7 +766,7 @@ mod path_tests {
     #[test]
     fn mac_badly_formed_utf8() {
         assert_eq!(
-            GitPath::new_with_platform_checks(
+            Path::new_with_platform_checks(
                 &[97, 98, 0xE2, 0x80],
                 &CheckPlatforms {
                     mac: true,
@@ -777,11 +774,11 @@ mod path_tests {
                 }
             )
             .unwrap_err(),
-            GitPathError::ContainsIncompleteUnicodeCharacters
+            PathError::ContainsIncompleteUnicodeCharacters
         );
 
         assert_eq!(
-            GitPath::new_with_platform_checks(
+            Path::new_with_platform_checks(
                 &[97, 98, 0xEF, 0x80],
                 &CheckPlatforms {
                     mac: true,
@@ -789,11 +786,11 @@ mod path_tests {
                 }
             )
             .unwrap_err(),
-            GitPathError::ContainsIncompleteUnicodeCharacters
+            PathError::ContainsIncompleteUnicodeCharacters
         );
 
         let name = &[97, 98, 0xE2, 0x80, 0xAE];
-        let a = GitPath::new_with_platform_checks(
+        let a = Path::new_with_platform_checks(
             name,
             &CheckPlatforms {
                 windows: false,
@@ -812,7 +809,7 @@ mod path_tests {
         );
 
         let bad_name = b".git\xEF";
-        let a = GitPath::new(bad_name).unwrap();
+        let a = Path::new(bad_name).unwrap();
 
         assert_eq!(&a.path(), bad_name);
         assert_eq!(
@@ -824,7 +821,7 @@ mod path_tests {
         );
 
         assert_eq!(
-            GitPath::new_with_platform_checks(
+            Path::new_with_platform_checks(
                 bad_name,
                 &CheckPlatforms {
                     mac: true,
@@ -832,11 +829,11 @@ mod path_tests {
                 }
             )
             .unwrap_err(),
-            GitPathError::ContainsIncompleteUnicodeCharacters
+            PathError::ContainsIncompleteUnicodeCharacters
         );
 
         let bad_name = b".git\xE2\xAB";
-        let a = GitPath::new(bad_name).unwrap();
+        let a = Path::new(bad_name).unwrap();
 
         assert_eq!(&a.path(), bad_name);
         assert_eq!(
@@ -848,7 +845,7 @@ mod path_tests {
         );
 
         assert_eq!(
-            GitPath::new_with_platform_checks(
+            Path::new_with_platform_checks(
                 bad_name,
                 &CheckPlatforms {
                     mac: true,
@@ -856,7 +853,7 @@ mod path_tests {
                 }
             )
             .unwrap_err(),
-            GitPathError::ContainsIncompleteUnicodeCharacters
+            PathError::ContainsIncompleteUnicodeCharacters
         );
     }
 }
@@ -869,12 +866,9 @@ mod path_segment_tests {
     #[cfg_attr(tarpaulin, skip)]
     fn basic_case() {
         // No platform-specific checks.
-        assert_eq!(
-            GitPathSegment::new(b"").unwrap_err(),
-            GitPathError::EmptyPath
-        );
+        assert_eq!(PathSegment::new(b"").unwrap_err(), PathError::EmptyPath);
 
-        let a = GitPathSegment::new(b"a").unwrap();
+        let a = PathSegment::new(b"a").unwrap();
         assert_eq!(a.path(), b"a");
         assert_eq!(
             a.checked_platforms(),
@@ -885,32 +879,32 @@ mod path_segment_tests {
         );
 
         assert_eq!(
-            GitPathSegment::new(b"a/b").unwrap_err(),
-            GitPathError::ContainsSlash
+            PathSegment::new(b"a/b").unwrap_err(),
+            PathError::ContainsSlash
         );
 
         assert_eq!(
-            GitPathSegment::new(b"a//b").unwrap_err(),
-            GitPathError::ContainsSlash
+            PathSegment::new(b"a//b").unwrap_err(),
+            PathError::ContainsSlash
         );
 
         assert_eq!(
-            GitPathSegment::new(b"/a").unwrap_err(),
-            GitPathError::ContainsSlash
+            PathSegment::new(b"/a").unwrap_err(),
+            PathError::ContainsSlash
         );
 
         assert_eq!(
-            GitPathSegment::new(b"a\0b").unwrap_err(),
-            GitPathError::ContainsNull
+            PathSegment::new(b"a\0b").unwrap_err(),
+            PathError::ContainsNull
         );
 
         assert_eq!(
-            GitPathSegment::new(b"a/").unwrap_err(),
-            GitPathError::ContainsSlash
+            PathSegment::new(b"a/").unwrap_err(),
+            PathError::ContainsSlash
         );
         assert_eq!(
-            GitPathSegment::new(b"ab/cd/ef/").unwrap_err(),
-            GitPathError::ContainsSlash
+            PathSegment::new(b"ab/cd/ef/").unwrap_err(),
+            PathError::ContainsSlash
         );
     }
 
@@ -933,13 +927,13 @@ mod path_segment_tests {
     fn git_reserved_names() {
         for name in &GIT_RESERVED_NAMES {
             assert_eq!(
-                GitPathSegment::new(name).unwrap_err(),
-                GitPathError::ReservedName(name.to_vec())
+                PathSegment::new(name).unwrap_err(),
+                PathError::ReservedName(name.to_vec())
             );
         }
 
         for name in &ALMOST_GIT_RESERVED_NAMES {
-            let a = GitPathSegment::new(name).unwrap();
+            let a = PathSegment::new(name).unwrap();
             assert_eq!(&a.path(), name);
         }
     }
@@ -954,13 +948,13 @@ mod path_segment_tests {
         // on *any* platform will cause problems when moving to Windows.
         for name in &WINDOWS_GIT_NAMES {
             assert_eq!(
-                GitPathSegment::new(name).unwrap_err(),
-                GitPathError::ReservedName(name.to_vec())
+                PathSegment::new(name).unwrap_err(),
+                PathError::ReservedName(name.to_vec())
             );
         }
 
         for name in &ALMOST_WINDOWS_GIT_NAMES {
-            let a = GitPathSegment::new(name).unwrap();
+            let a = PathSegment::new(name).unwrap();
             assert_eq!(&a.path(), name);
         }
     }
@@ -985,13 +979,13 @@ mod path_segment_tests {
     #[test]
     fn invalid_windows_characters() {
         for name in &INVALID_WINDOWS_PATHS {
-            let a = GitPathSegment::new(name).unwrap();
+            let a = PathSegment::new(name).unwrap();
             assert_eq!(&a.path(), name);
 
             let c = *(name.first().unwrap()) as char;
 
             assert_eq!(
-                GitPathSegment::new_with_platform_checks(
+                PathSegment::new_with_platform_checks(
                     name,
                     &CheckPlatforms {
                         windows: true,
@@ -999,7 +993,7 @@ mod path_segment_tests {
                     }
                 )
                 .unwrap_err(),
-                GitPathError::ContainsInvalidWindowsCharacter(c)
+                PathError::ContainsInvalidWindowsCharacter(c)
             );
         }
 
@@ -1009,13 +1003,13 @@ mod path_segment_tests {
             name.extend_from_slice(n);
             name.push(b'b');
 
-            let a = GitPathSegment::new(&name).unwrap();
+            let a = PathSegment::new(&name).unwrap();
             assert_eq!(a.path(), name.as_slice());
 
             let c = *(n.first().unwrap()) as char;
 
             assert_eq!(
-                GitPathSegment::new_with_platform_checks(
+                PathSegment::new_with_platform_checks(
                     &name,
                     &CheckPlatforms {
                         windows: true,
@@ -1023,7 +1017,7 @@ mod path_segment_tests {
                     }
                 )
                 .unwrap_err(),
-                GitPathError::ContainsInvalidWindowsCharacter(c)
+                PathError::ContainsInvalidWindowsCharacter(c)
             );
         }
     }
@@ -1032,11 +1026,11 @@ mod path_segment_tests {
     #[cfg_attr(tarpaulin, skip)]
     fn invalid_windows_name_ending() {
         let name = b"abc.";
-        let a = GitPathSegment::new(name).unwrap();
+        let a = PathSegment::new(name).unwrap();
         assert_eq!(&a.path(), name);
 
         assert_eq!(
-            GitPathSegment::new_with_platform_checks(
+            PathSegment::new_with_platform_checks(
                 name,
                 &CheckPlatforms {
                     windows: true,
@@ -1044,15 +1038,15 @@ mod path_segment_tests {
                 }
             )
             .unwrap_err(),
-            GitPathError::InvalidWindowsNameEnding('.')
+            PathError::InvalidWindowsNameEnding('.')
         );
 
         let name = b"abc ";
-        let a = GitPathSegment::new(name).unwrap();
+        let a = PathSegment::new(name).unwrap();
         assert_eq!(&a.path(), name);
 
         assert_eq!(
-            GitPathSegment::new_with_platform_checks(
+            PathSegment::new_with_platform_checks(
                 name,
                 &CheckPlatforms {
                     windows: true,
@@ -1060,7 +1054,7 @@ mod path_segment_tests {
                 }
             )
             .unwrap_err(),
-            GitPathError::InvalidWindowsNameEnding(' ')
+            PathError::InvalidWindowsNameEnding(' ')
         );
     }
 
@@ -1075,11 +1069,11 @@ mod path_segment_tests {
     #[cfg_attr(tarpaulin, skip)]
     fn invalid_windows_device_names() {
         for name in &WINDOWS_DEVICE_NAMES {
-            let a = GitPathSegment::new(name).unwrap();
+            let a = PathSegment::new(name).unwrap();
             assert_eq!(&a.path(), name);
 
             assert_eq!(
-                GitPathSegment::new_with_platform_checks(
+                PathSegment::new_with_platform_checks(
                     name,
                     &CheckPlatforms {
                         windows: true,
@@ -1087,15 +1081,15 @@ mod path_segment_tests {
                     }
                 )
                 .unwrap_err(),
-                GitPathError::ReservedWindowsDeviceName(name.to_vec())
+                PathError::ReservedWindowsDeviceName(name.to_vec())
             );
         }
 
         for name in &ALMOST_WINDOWS_DEVICE_NAMES {
-            let a = GitPathSegment::new(name).unwrap();
+            let a = PathSegment::new(name).unwrap();
             assert_eq!(&a.path(), name);
 
-            let a = GitPathSegment::new_with_platform_checks(
+            let a = PathSegment::new_with_platform_checks(
                 &name,
                 &CheckPlatforms {
                     windows: true,
@@ -1134,11 +1128,11 @@ mod path_segment_tests {
         for name in &MAC_HFS_GIT_NAMES {
             let name = name.as_bytes();
 
-            let a = GitPathSegment::new(name).unwrap();
+            let a = PathSegment::new(name).unwrap();
             assert_eq!(&a.path(), &name);
 
             assert_eq!(
-                GitPathSegment::new_with_platform_checks(
+                PathSegment::new_with_platform_checks(
                     name,
                     &CheckPlatforms {
                         windows: false,
@@ -1146,17 +1140,17 @@ mod path_segment_tests {
                     }
                 )
                 .unwrap_err(),
-                GitPathError::ContainsIgnorableUnicodeCharacters
+                PathError::ContainsIgnorableUnicodeCharacters
             );
         }
 
         for name in &ALMOST_MAC_HFS_GIT_NAMES {
             let name = name.as_bytes();
 
-            let a = GitPathSegment::new(name).unwrap();
+            let a = PathSegment::new(name).unwrap();
             assert_eq!(&a.path(), &name);
 
-            let a = GitPathSegment::new_with_platform_checks(
+            let a = PathSegment::new_with_platform_checks(
                 name,
                 &CheckPlatforms {
                     windows: false,
@@ -1178,7 +1172,7 @@ mod path_segment_tests {
     #[test]
     fn mac_badly_formed_utf8() {
         assert_eq!(
-            GitPathSegment::new_with_platform_checks(
+            PathSegment::new_with_platform_checks(
                 &[97, 98, 0xE2, 0x80],
                 &CheckPlatforms {
                     mac: true,
@@ -1186,11 +1180,11 @@ mod path_segment_tests {
                 }
             )
             .unwrap_err(),
-            GitPathError::ContainsIncompleteUnicodeCharacters
+            PathError::ContainsIncompleteUnicodeCharacters
         );
 
         assert_eq!(
-            GitPathSegment::new_with_platform_checks(
+            PathSegment::new_with_platform_checks(
                 &[97, 98, 0xEF, 0x80],
                 &CheckPlatforms {
                     mac: true,
@@ -1198,11 +1192,11 @@ mod path_segment_tests {
                 }
             )
             .unwrap_err(),
-            GitPathError::ContainsIncompleteUnicodeCharacters
+            PathError::ContainsIncompleteUnicodeCharacters
         );
 
         let name = &[97, 98, 0xE2, 0x80, 0xAE];
-        let a = GitPathSegment::new_with_platform_checks(
+        let a = PathSegment::new_with_platform_checks(
             name,
             &CheckPlatforms {
                 windows: false,
@@ -1221,7 +1215,7 @@ mod path_segment_tests {
         );
 
         let bad_name = b".git\xEF";
-        let a = GitPathSegment::new(bad_name).unwrap();
+        let a = PathSegment::new(bad_name).unwrap();
 
         assert_eq!(&a.path(), bad_name);
         assert_eq!(
@@ -1233,7 +1227,7 @@ mod path_segment_tests {
         );
 
         assert_eq!(
-            GitPathSegment::new_with_platform_checks(
+            PathSegment::new_with_platform_checks(
                 bad_name,
                 &CheckPlatforms {
                     mac: true,
@@ -1241,11 +1235,11 @@ mod path_segment_tests {
                 }
             )
             .unwrap_err(),
-            GitPathError::ContainsIncompleteUnicodeCharacters
+            PathError::ContainsIncompleteUnicodeCharacters
         );
 
         let bad_name = b".git\xE2\xAB";
-        let a = GitPathSegment::new(bad_name).unwrap();
+        let a = PathSegment::new(bad_name).unwrap();
 
         assert_eq!(&a.path(), bad_name);
         assert_eq!(
@@ -1257,7 +1251,7 @@ mod path_segment_tests {
         );
 
         assert_eq!(
-            GitPathSegment::new_with_platform_checks(
+            PathSegment::new_with_platform_checks(
                 bad_name,
                 &CheckPlatforms {
                     mac: true,
@@ -1265,7 +1259,7 @@ mod path_segment_tests {
                 }
             )
             .unwrap_err(),
-            GitPathError::ContainsIncompleteUnicodeCharacters
+            PathError::ContainsIncompleteUnicodeCharacters
         );
     }
 }
