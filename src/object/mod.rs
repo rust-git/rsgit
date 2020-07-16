@@ -3,7 +3,7 @@
 
 use sha1::{Digest, Sha1};
 
-use crate::CheckPlatforms;
+use crate::path::CheckPlatforms;
 
 mod attribution;
 pub use attribution::Attribution;

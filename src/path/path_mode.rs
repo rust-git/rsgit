@@ -1,9 +1,9 @@
 use std::cmp::{self, Ordering};
 
-use crate::file_mode::FileMode;
+use super::FileMode;
 
 /// Represents the tuple of git path (an uninterpreted sequence of bytes,
-/// not necessarily UTF-8) and git file mode. Used for comparisons.
+/// not necessarily UTF-8) and git file mode. Used for sorting trees of objects.
 #[derive(Debug, Eq, PartialEq)]
 pub struct PathMode<'a> {
     pub path: &'a [u8],
