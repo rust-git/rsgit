@@ -13,7 +13,7 @@ mod path_mode;
 pub use path_mode::PathMode;
 
 /// Represents a sequence of bytes that is a valid path in a git repo.
-/// 
+///
 /// A path is typically, but not necessarily, interpreted as UTF-8.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Path<'a> {
