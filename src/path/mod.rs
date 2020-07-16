@@ -1,3 +1,6 @@
+//! Represents the git concept of a "path" which is a sequence of
+//! bytes describing where a given object should be stored in a working tree.
+
 use std::result::Result;
 
 extern crate thiserror;
@@ -9,8 +12,9 @@ pub use file_mode::FileMode;
 mod path_mode;
 pub use path_mode::PathMode;
 
-/// Represents a list of bytes (typically, but not necessarily UTF-8)
-/// that is a valid path in a git repo.
+/// Represents a sequence of bytes that is a valid path in a git repo.
+/// 
+/// A path is typically, but not necessarily, interpreted as UTF-8.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Path<'a> {
     path: &'a [u8],
