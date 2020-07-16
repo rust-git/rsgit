@@ -116,38 +116,36 @@ impl Object {
         Ok(())
     }
 
-    /// Returns true if the content of the object is valid for the type.
-    #[cfg_attr(tarpaulin, skip)]
-    pub fn is_valid(&self) -> ContentSourceResult<bool> {
-        // The match line is seen as executable but not covered.
-        // Does not compute.
-        match self.kind {
-            Kind::Blob => Ok(true),
-            Kind::Commit => check_commit::commit_is_valid(self.content_source.as_ref()),
-            Kind::Tag => check_tag::tag_is_valid(self.content_source.as_ref()),
-            Kind::Tree => check_tree::tree_is_valid(self.content_source.as_ref()),
+        /// Returns true if the content of the object is valid for the type.
+        pub fn is_valid(&self) -> ContentSourceResult<bool> {
+            // The match line is seen as executable but not covered.
+            // Does not compute.
+            match self.kind {
+                Kind::Blob => Ok(true),
+                Kind::Commit => check_commit::commit_is_valid(self.content_source.as_ref()),
+                Kind::Tag => check_tag::tag_is_valid(self.content_source.as_ref()),
+                Kind::Tree => check_tree::tree_is_valid(self.content_source.as_ref()),
+            }
         }
-    }
 
-    /// Returns true if the content of the object is valid for the type
-    /// and the given platform's file system(s).
-    #[cfg_attr(tarpaulin, skip)]
-    pub fn is_valid_with_platform_checks(
-        &self,
-        platforms: &CheckPlatforms,
-    ) -> ContentSourceResult<bool> {
-        // The match and platforms line are seen as executable but not covered.
-        // Does not compute.
-        match self.kind {
-            Kind::Blob => Ok(true),
-            Kind::Commit => check_commit::commit_is_valid(self.content_source.as_ref()),
-            Kind::Tag => check_tag::tag_is_valid(self.content_source.as_ref()),
-            Kind::Tree => check_tree::tree_is_valid_with_platform_checks(
-                self.content_source.as_ref(),
-                platforms,
-            ),
+        /// Returns true if the content of the object is valid for the type
+        /// and the given platform's file system(s).
+        pub fn is_valid_with_platform_checks(
+            &self,
+            platforms: &CheckPlatforms,
+        ) -> ContentSourceResult<bool> {
+            // The match and platforms line are seen as executable but not covered.
+            // Does not compute.
+            match self.kind {
+                Kind::Blob => Ok(true),
+                Kind::Commit => check_commit::commit_is_valid(self.content_source.as_ref()),
+                Kind::Tag => check_tag::tag_is_valid(self.content_source.as_ref()),
+                Kind::Tree => check_tree::tree_is_valid_with_platform_checks(
+                    self.content_source.as_ref(),
+                    platforms, 
+                ),
+            }
         }
-    }
 }
 
 #[cfg(test)]
