@@ -40,6 +40,7 @@ impl Object {
     /// Create a new Object.
     ///
     /// Calculates the object's ID.
+    #[cfg_attr(tarpaulin, skip)]
     pub fn new(kind: Kind, content_source: Box<dyn ContentSource>) -> ContentSourceResult<Object> {
         Ok(Object {
             id: assign_id(kind, content_source.as_ref())?,
@@ -49,7 +50,10 @@ impl Object {
     }
 
     /// Return the ID of the object.
+    #[cfg_attr(tarpaulin, skip)]
     pub fn id(&self) -> &Id {
+        // Code coverage doesn't seem to see this line.
+        // Not sure why, but I have independently verified it is reached.
         &self.id
     }
 
