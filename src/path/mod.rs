@@ -82,7 +82,7 @@ impl<'a> Path<'a> {
     /// as a git path. The rules enforced here are slightly different from what
     /// is allowed in a `tree` object in that we allow `/` characters to build
     /// hierarchical paths.
-    #[cfg_attr(tarpaulin, skip)]
+    #[tarpaulin::skip]
     pub fn new(path: &'a [u8]) -> Result<Path<'a>, PathError> {
         // Argh. `cargo fmt` reformats this into a format that generates
         // "coverage" for some of the arguments below, but not all.
@@ -98,7 +98,7 @@ impl<'a> Path<'a> {
     /// Convert the provided byte vector to a `Path` struct if it is acceptable
     /// as a git path. In addition to the typical constraints enforced via `new()`,
     /// also check platform-specific rules.
-    #[cfg_attr(tarpaulin, skip)]
+    #[tarpaulin::skip]
     pub fn new_with_platform_checks(
         path: &'a [u8],
         platforms: &CheckPlatforms,
@@ -129,7 +129,7 @@ impl<'a> PathSegment<'a> {
     /// Convert the provided byte vector to a `PathSegment` struct if it is
     /// acceptable as a git path segment. Similarly to a `tree` object, we do not
     /// allow `/` characters.
-    #[cfg_attr(tarpaulin, skip)]
+    #[tarpaulin::skip]
     pub fn new(path: &'a [u8]) -> Result<PathSegment<'a>, PathError> {
         // Argh. `cargo fmt` reformats this into a format that generates
         // "coverage" for some of the arguments below, but not all.
@@ -145,7 +145,7 @@ impl<'a> PathSegment<'a> {
     /// Convert the provided byte vector to a `PathSegment` struct if it is acceptable
     /// as a git path. In addition to the typical constraints enforced via `new()`,
     /// also check platform-specific rules.
-    #[cfg_attr(tarpaulin, skip)]
+    #[tarpaulin::skip]
     pub fn new_with_platform_checks(
         path: &'a [u8],
         platforms: &CheckPlatforms,
@@ -311,7 +311,7 @@ fn check_windows_segment_ending(segment: &[u8]) -> Result<(), PathError> {
     }
 }
 
-#[cfg_attr(tarpaulin, skip)]
+#[tarpaulin::skip]
 fn check_windows_device_name(segment: &[u8]) -> Result<(), PathError> {
     // Coverage skip justification: We have to cover the `None` case,
     // but we know it will never happen because we earlier test for
@@ -450,7 +450,7 @@ mod path_tests {
     use super::*;
 
     #[test]
-    #[cfg_attr(tarpaulin, skip)]
+    #[tarpaulin::skip]
     fn basic_case() {
         // No platform-specific checks.
         assert_eq!(Path::new(b"").unwrap_err(), PathError::EmptyPath);
@@ -504,7 +504,7 @@ mod path_tests {
     ];
 
     #[test]
-    #[cfg_attr(tarpaulin, skip)]
+    #[tarpaulin::skip]
     fn git_reserved_names() {
         for name in &GIT_RESERVED_NAMES {
             assert_eq!(
@@ -523,7 +523,7 @@ mod path_tests {
     const ALMOST_WINDOWS_GIT_NAMES: [&[u8]; 2] = [b"GIT~11", b"GIT~2"];
 
     #[test]
-    #[cfg_attr(tarpaulin, skip)]
+    #[tarpaulin::skip]
     fn windows_variations_on_dot_git_name() {
         // This constraint applies to all platforms, since a ".git"-like name
         // on *any* platform will cause problems when moving to Windows.
@@ -621,7 +621,7 @@ mod path_tests {
     }
 
     #[test]
-    #[cfg_attr(tarpaulin, skip)]
+    #[tarpaulin::skip]
     fn invalid_windows_name_ending() {
         let name = b"abc.";
         let a = Path::new(name).unwrap();
@@ -664,7 +664,7 @@ mod path_tests {
     ];
 
     #[test]
-    #[cfg_attr(tarpaulin, skip)]
+    #[tarpaulin::skip]
     fn invalid_windows_device_names() {
         for name in &WINDOWS_DEVICE_NAMES {
             let a = Path::new(name).unwrap();
@@ -867,7 +867,7 @@ mod path_segment_tests {
     use super::*;
 
     #[test]
-    #[cfg_attr(tarpaulin, skip)]
+    #[tarpaulin::skip]
     fn basic_case() {
         // No platform-specific checks.
         assert_eq!(PathSegment::new(b"").unwrap_err(), PathError::EmptyPath);
@@ -927,7 +927,7 @@ mod path_segment_tests {
     ];
 
     #[test]
-    #[cfg_attr(tarpaulin, skip)]
+    #[tarpaulin::skip]
     fn git_reserved_names() {
         for name in &GIT_RESERVED_NAMES {
             assert_eq!(
@@ -946,7 +946,7 @@ mod path_segment_tests {
     const ALMOST_WINDOWS_GIT_NAMES: [&[u8]; 2] = [b"GIT~11", b"GIT~2"];
 
     #[test]
-    #[cfg_attr(tarpaulin, skip)]
+    #[tarpaulin::skip]
     fn windows_variations_on_dot_git_name() {
         // This constraint applies to all platforms, since a ".git"-like name
         // on *any* platform will cause problems when moving to Windows.
@@ -1027,7 +1027,7 @@ mod path_segment_tests {
     }
 
     #[test]
-    #[cfg_attr(tarpaulin, skip)]
+    #[tarpaulin::skip]
     fn invalid_windows_name_ending() {
         let name = b"abc.";
         let a = PathSegment::new(name).unwrap();
@@ -1070,7 +1070,7 @@ mod path_segment_tests {
     ];
 
     #[test]
-    #[cfg_attr(tarpaulin, skip)]
+    #[tarpaulin::skip]
     fn invalid_windows_device_names() {
         for name in &WINDOWS_DEVICE_NAMES {
             let a = PathSegment::new(name).unwrap();
