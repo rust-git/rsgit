@@ -7,6 +7,9 @@
 //! (see `rsgit::repo::on_disk`), you could envision repositories stored entirely
 //! in memory, or on a remote file system or database.
 
+mod error;
+pub use error::{Error, Result};
+
 pub mod on_disk;
 
 /// A struct that implements the `Repo` trait represents a particular mechanism
