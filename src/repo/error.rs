@@ -1,10 +1,20 @@
-extern crate thiserror;
+use std::path::PathBuf;
 
+extern crate thiserror;
 use thiserror::Error;
 
 /// Describes the potential error conditions that might arise from rsgit `Repo` operations.
 #[derive(Debug, Error)]
 pub enum Error {
+    #[error("work_dir doesn't exist `{0}`")]
+    WorkDirDoesntExist(PathBuf),
+
+    #[error("git_dir doesn't exist `{0}`")]
+    GitDirDoesntExist(PathBuf),
+
+    #[error("git_dir shouldn't exist `{0}`")]
+    GitDirShouldntExist(PathBuf),
+
     #[error(transparent)]
     IoError(#[from] std::io::Error),
 
