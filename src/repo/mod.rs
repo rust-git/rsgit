@@ -28,7 +28,7 @@ pub use on_disk::OnDisk;
 
 pub trait Repo {
     /// Writes a loose object to the repository.
-    /// 
+    ///
     /// This is analogous to `git hash-object -w`.
     fn put_loose_object(&mut self, object: &Object) -> Result<()>;
 }
