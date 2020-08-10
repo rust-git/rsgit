@@ -7,10 +7,16 @@
 //! That said, it does intentionally use the same `.git` folder format as
 //! command-line git so that results may be compared for similar operations.
 
-use std::fs;
+use std::fs::{self, OpenOptions};
+use std::io::{self, Write};
 use std::path::{Path, PathBuf};
 
+use crate::object::Object;
+
 use super::{Error, Repo, Result};
+
+use flate2::write::ZlibEncoder;
+use flate2::Compression;
 
 /// Implementation of `rsgit::Repo` that stores content on the local file system.
 ///
@@ -22,10 +28,7 @@ use super::{Error, Repo, Result};
 /// `git` so that results may be compared for similar operations.
 #[derive(Debug)]
 pub struct OnDisk {
-    #[allow(dead_code)] // TEMPORARY: Remove once we start consuming this.
     work_dir: PathBuf,
-
-    #[allow(dead_code)] // TEMPORARY: Remove once we start consuming this.
     git_dir: PathBuf,
 }
 
@@ -85,7 +88,21 @@ impl OnDisk {
     }
 }
 
-impl Repo for OnDisk {}
+impl Repo for OnDisk {
+    fn put_loose_object(&mut self, object: &Object) -> Result<()> {
+        let object_id = object.id().to_string();
+        let (dir, path) = object_id.split_at(2);
+
+        let mut object_path = self.git_dir.join("objects");
+        object_path.push(dir);
+        fs::create_dir(&object_path)?;
+
+        object_path.push(path);
+        write_object_to_path(object, object_path.as_ref())
+    }
+}
+
+// --- init helpers ---
 
 fn create_config(git_dir: &Path) -> Result<()> {
     let config_path = git_dir.join("config");
@@ -139,6 +156,22 @@ fn create_refs_dir(git_dir: &Path) -> Result<()> {
 
     let tags_dir = git_dir.join("refs/tags");
     fs::create_dir_all(&tags_dir).map_err(|e| e.into())
+}
+
+// --- put_loose_object helpers ---
+
+fn write_object_to_path(object: &Object, path: &Path) -> Result<()> {
+    let file = OpenOptions::new().write(true).create_new(true).open(path)?;
+    let mut z = ZlibEncoder::new(file, Compression::new(1));
+
+    let header = format!("{} {}\0", object.kind(), object.len()).into_bytes();
+    z.write_all(&header)?;
+
+    let mut object_reader = object.open()?;
+    io::copy(&mut object_reader, &mut z)?;
+
+    z.finish()?;
+    Ok(())
 }
 
 #[cfg(test)]

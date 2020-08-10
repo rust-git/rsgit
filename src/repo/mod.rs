@@ -7,6 +7,8 @@
 //! (see `rsgit::repo::on_disk`), you could envision repositories stored entirely
 //! in memory, or on a remote file system or database.
 
+use crate::object::Object;
+
 mod error;
 pub use error::{Error, Result};
 
@@ -24,4 +26,9 @@ pub use on_disk::OnDisk;
 /// The provided methods on this trait represent the common "porcelain" and "plumbing"
 /// operations for a git repo, regardless of its storage mechanism.
 
-pub trait Repo {}
+pub trait Repo {
+    /// Writes a loose object to the repository.
+    ///
+    /// This is analogous to `git hash-object -w`.
+    fn put_loose_object(&mut self, object: &Object) -> Result<()>;
+}
