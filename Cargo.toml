@@ -4,6 +4,14 @@ version = "0.1.0"
 authors = ["Eric Scouten <eric@scouten.com>"]
 edition = "2018"
 
+[lib]
+name = "rsgit"
+path = "src/lib.rs"
+
+[[bin]]
+name = "rsgit"
+path = "src/cli/bin.rs"
+
 # We use the C-language version of zlib for now because the Rust implementation
 # doesn't match git's implementation byte-for-byte. Possible we could swap out
 # implementations later, but not for now.
