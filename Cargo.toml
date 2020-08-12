@@ -5,11 +5,10 @@ authors = ["Eric Scouten <eric@scouten.com>"]
 edition = "2018"
 
 [lib]
-name = "rsgit"
 path = "src/lib.rs"
 
 [[bin]]
-name = "rsgit_cli"
+name = "rsgit"
 path = "src/cli/bin.rs"
 
 # We use the C-language version of zlib for now because the Rust implementation
