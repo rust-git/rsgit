@@ -9,7 +9,7 @@ name = "rsgit"
 path = "src/lib.rs"
 
 [[bin]]
-name = "rsgit"
+name = "rsgit_cli"
 path = "src/cli/bin.rs"
 
 # We use the C-language version of zlib for now because the Rust implementation
