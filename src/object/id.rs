@@ -1,7 +1,6 @@
 use std::fmt::{self, Write};
 use std::str::FromStr;
 
-extern crate thiserror;
 use thiserror::Error;
 
 /// An error which can be returned when parsing a git object ID.
@@ -123,8 +122,6 @@ fn digit_value(c: u8) -> Result<u8, ParseIdError> {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    extern crate tempfile;
 
     #[test]
     fn new() {

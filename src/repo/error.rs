@@ -1,6 +1,5 @@
 use std::path::PathBuf;
 
-extern crate thiserror;
 use thiserror::Error;
 
 /// Describes the potential error conditions that might arise from rsgit `Repo` operations.
