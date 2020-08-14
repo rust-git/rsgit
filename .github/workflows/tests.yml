@@ -16,6 +16,9 @@ jobs:
           toolchain: 1.44.0
           override: true
 
+      - name: Build
+        - run: cargo build --debug      
+
       - name: Run cargo-tarpaulin
         uses: actions-rs/tarpaulin@v0.1
         with:
