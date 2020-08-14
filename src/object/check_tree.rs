@@ -6,7 +6,6 @@ use std::cmp::Ordering;
 use std::collections::HashSet;
 use std::io::BufRead;
 
-extern crate unicode_normalization;
 use unicode_normalization::UnicodeNormalization;
 
 pub(crate) fn tree_is_valid(s: &dyn ContentSource) -> ContentSourceResult<bool> {

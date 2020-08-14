@@ -4,9 +4,6 @@ use std::fs;
 
 use crate::test_support::TempGitRepo;
 
-extern crate dir_diff;
-extern crate tempfile;
-
 #[test]
 fn happy_path() {
     let tgr = TempGitRepo::new();
