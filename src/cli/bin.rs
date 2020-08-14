@@ -5,3 +5,24 @@ pub fn main() {
 
     println!("Hello from rsgit!");
 }
+
+#[cfg(test)]
+mod tests {
+    use assert_cmd::Command;
+    use predicates::prelude::*;
+
+    #[test]
+    fn happy_path() {
+        let mut cmd = Command::cargo_bin("rsgit").unwrap();
+        cmd.assert().success().stdout("Hello from rsgit!\n");
+    }
+
+    #[test]
+    fn version() {
+        let mut cmd = Command::cargo_bin("rsgit").unwrap();
+        cmd.arg("--version")
+            .assert()
+            .success()
+            .stdout(predicate::str::starts_with("rsgit 0."));
+    }
+}
