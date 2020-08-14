@@ -17,7 +17,7 @@ jobs:
           override: true
 
       - name: Build
-        run: cargo build --debug
+        run: cargo build
 
       - name: Run cargo-tarpaulin
         uses: actions-rs/tarpaulin@v0.1
