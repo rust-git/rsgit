@@ -5,9 +5,6 @@ use super::super::*;
 use crate::object::{Kind, Object};
 use crate::test_support::TempGitRepo;
 
-extern crate dir_diff;
-extern crate tempfile;
-
 use tempfile::{tempdir, NamedTempFile};
 
 const TEST_CONTENT: &[u8; 13] = b"test content\n";

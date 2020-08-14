@@ -150,7 +150,6 @@ mod tests {
     use std::io::Write;
     use std::process::Command;
 
-    extern crate tempfile;
     use tempfile::TempDir;
 
     #[test]

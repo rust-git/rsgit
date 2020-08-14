@@ -3,7 +3,6 @@
 
 use std::result::Result;
 
-extern crate thiserror;
 use thiserror::Error;
 
 mod file_mode;

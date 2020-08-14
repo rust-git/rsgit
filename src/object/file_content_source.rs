@@ -40,8 +40,6 @@ impl ContentSource for FileContentSource {
 
 #[cfg(test)]
 mod tests {
-    extern crate tempfile;
-
     use super::*;
 
     use std::io::{ErrorKind, Write};
