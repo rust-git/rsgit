@@ -310,7 +310,11 @@ fn check_windows_segment_ending(segment: &[u8]) -> Result<(), PathError> {
     }
 }
 
+#[cfg_attr(tarpaulin, skip)]
 fn check_windows_device_name(segment: &[u8]) -> Result<(), PathError> {
+    // Coverage skip justification: We have to cover the `None` case,
+    // but we know it will never happen because we earlier test for
+    // and bail out if the segment name is empty.
     match segment.split(|c| *c == b'.').next() {
         Some(before_dot) => {
             let illegal = match before_dot.len() {
