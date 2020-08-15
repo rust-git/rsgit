@@ -310,7 +310,7 @@ fn check_windows_segment_ending(segment: &[u8]) -> Result<(), PathError> {
     }
 }
 
-#[cfg_attr(tarpaulin, skip)]
+#[cfg(not(tarpaulin_include))]
 fn check_windows_device_name(segment: &[u8]) -> Result<(), PathError> {
     // Coverage skip justification: We have to cover the `None` case,
     // but we know it will never happen because we earlier test for

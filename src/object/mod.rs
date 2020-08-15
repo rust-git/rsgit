@@ -40,7 +40,7 @@ impl Object {
     /// Create a new Object.
     ///
     /// Calculates the object's ID.
-    #[cfg_attr(tarpaulin, skip)]
+    #[cfg(not(tarpaulin_include))]
     pub fn new(kind: Kind, content_source: Box<dyn ContentSource>) -> ContentSourceResult<Object> {
         Ok(Object {
             id: assign_id(kind, content_source.as_ref())?,
@@ -89,7 +89,7 @@ impl Object {
 
     /// Returns true if the content of the object is valid for the type
     /// and the given platform's file system(s).
-    #[cfg_attr(tarpaulin, skip)]
+    #[cfg(not(tarpaulin_include))]
     pub fn is_valid_with_platform_checks(
         &self,
         platforms: &CheckPlatforms,
