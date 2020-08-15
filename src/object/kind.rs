@@ -11,10 +11,7 @@ pub enum Kind {
 }
 
 impl Display for Kind {
-    #[cfg(not(tarpaulin_include))]
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        // Code coverage doesn't see the "match self" line.
-        // Not sure why, but I have independently verified it is reached.
         match self {
             Kind::Blob => write!(f, "blob"),
             Kind::Tree => write!(f, "tree"),
