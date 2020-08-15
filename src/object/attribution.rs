@@ -201,7 +201,7 @@ impl fmt::Display for Attribution {
     // Skipping this function because, for some reason, the line
     // containing "f," doesn't register as reached. There is definitely
     // test coverage for the entire function.
-    #[cfg_attr(tarpaulin, skip)]
+    #[cfg(not(tarpaulin_include))]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
