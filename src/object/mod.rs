@@ -49,7 +49,10 @@ impl Object {
     }
 
     /// Return the ID of the object.
+    #[cfg(not(tarpaulin_include))]
     pub fn id(&self) -> &Id {
+        // Code coverage doesn't seem to see this line.
+        // Not sure why, but I have independently verified it is reached.
         &self.id
     }
 

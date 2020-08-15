@@ -81,7 +81,10 @@ impl<'a> Path<'a> {
     /// as a git path. The rules enforced here are slightly different from what
     /// is allowed in a `tree` object in that we allow `/` characters to build
     /// hierarchical paths.
+    #[cfg(not(tarpaulin_include))]
     pub fn new(path: &'a [u8]) -> Result<Path<'a>, PathError> {
+        // Argh. `cargo fmt` reformats this into a format that generates
+        // "coverage" for some of the arguments below, but not all.
         Path::new_with_platform_checks(
             path,
             &CheckPlatforms {
@@ -94,10 +97,13 @@ impl<'a> Path<'a> {
     /// Convert the provided byte vector to a `Path` struct if it is acceptable
     /// as a git path. In addition to the typical constraints enforced via `new()`,
     /// also check platform-specific rules.
+    #[cfg(not(tarpaulin_include))]
     pub fn new_with_platform_checks(
         path: &'a [u8],
         platforms: &CheckPlatforms,
     ) -> Result<Path<'a>, PathError> {
+        // Argh. `cargo fmt` reformats this into a format that generates
+        // "coverage" for some of the arguments below, but not all.
         match check_path(path, platforms) {
             Ok(()) => Ok(Path {
                 path,
@@ -122,7 +128,10 @@ impl<'a> PathSegment<'a> {
     /// Convert the provided byte vector to a `PathSegment` struct if it is
     /// acceptable as a git path segment. Similarly to a `tree` object, we do not
     /// allow `/` characters.
+    #[cfg(not(tarpaulin_include))]
     pub fn new(path: &'a [u8]) -> Result<PathSegment<'a>, PathError> {
+        // Argh. `cargo fmt` reformats this into a format that generates
+        // "coverage" for some of the arguments below, but not all.
         PathSegment::new_with_platform_checks(
             path,
             &CheckPlatforms {
@@ -135,10 +144,13 @@ impl<'a> PathSegment<'a> {
     /// Convert the provided byte vector to a `PathSegment` struct if it is acceptable
     /// as a git path. In addition to the typical constraints enforced via `new()`,
     /// also check platform-specific rules.
+    #[cfg(not(tarpaulin_include))]
     pub fn new_with_platform_checks(
         path: &'a [u8],
         platforms: &CheckPlatforms,
     ) -> Result<PathSegment<'a>, PathError> {
+        // Argh. `cargo fmt` reformats this into a format that generates
+        // "coverage" for some of the arguments below, but not all.
         match check_segment(path, platforms) {
             Ok(()) => Ok(PathSegment {
                 path,
