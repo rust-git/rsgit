@@ -40,7 +40,7 @@ impl Object {
     /// Create a new Object.
     ///
     /// Calculates the object's ID.
-    #[cfg_attr(tarpaulin, skip)]
+    #[cfg(not(tarpaulin_include))]
     pub fn new(kind: Kind, content_source: Box<dyn ContentSource>) -> ContentSourceResult<Object> {
         Ok(Object {
             id: assign_id(kind, content_source.as_ref())?,
@@ -50,7 +50,7 @@ impl Object {
     }
 
     /// Return the ID of the object.
-    #[cfg_attr(tarpaulin, skip)]
+    #[cfg(not(tarpaulin_include))]
     pub fn id(&self) -> &Id {
         // Code coverage doesn't seem to see this line.
         // Not sure why, but I have independently verified it is reached.
@@ -78,7 +78,7 @@ impl Object {
     }
 
     /// Returns true if the content of the object is valid for the type.
-    #[cfg_attr(tarpaulin, skip)]
+    #[cfg(not(tarpaulin_include))]
     pub fn is_valid(&self) -> ContentSourceResult<bool> {
         // The match line is seen as executable but not covered.
         // Does not compute.
@@ -92,7 +92,7 @@ impl Object {
 
     /// Returns true if the content of the object is valid for the type
     /// and the given platform's file system(s).
-    #[cfg_attr(tarpaulin, skip)]
+    #[cfg(not(tarpaulin_include))]
     pub fn is_valid_with_platform_checks(
         &self,
         platforms: &CheckPlatforms,
@@ -280,7 +280,7 @@ mod tests {
     }
 
     #[test]
-    #[cfg_attr(tarpaulin, skip)]
+    #[cfg(not(tarpaulin_include))]
     fn assign_id_from_file_matches_git_hash_object() {
         let dir = TempDir::new().unwrap();
         let path = dir.as_ref().join("example");
