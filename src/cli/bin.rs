@@ -1,5 +1,6 @@
 use clap::{crate_version, App};
 
+#[cfg(not(tarpaulin_include))]
 pub fn main() {
     let _matches = App::new("rsgit").version(crate_version!()).get_matches();
 
@@ -23,6 +24,6 @@ mod tests {
         cmd.arg("--version")
             .assert()
             .success()
-            .stdout(predicate::str::starts_with("rsgit 1."));
+            .stdout(predicate::str::starts_with("rsgit 0."));
     }
 }
