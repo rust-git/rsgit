@@ -16,11 +16,17 @@ jobs:
           toolchain: 1.44.0
           override: true
 
+      - name: Build CLI
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: --bins
+
       - name: Run cargo-tarpaulin
         uses: actions-rs/tarpaulin@v0.1
         with:
           version: '0.14.2'
-          args: '--ignore-tests -- --test-threads 1'
+          args: '--ignore-tests --all-features -- --test-threads 1'
 
       - name: Upload to codecov.io
         uses: codecov/codecov-action@v1.0.10
