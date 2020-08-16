@@ -23,6 +23,6 @@ mod tests {
         cmd.arg("--version")
             .assert()
             .success()
-            .stdout(predicate::str::starts_with("rsgit 0."));
+            .stdout(predicate::str::starts_with("rsgit 1."));
     }
 }
