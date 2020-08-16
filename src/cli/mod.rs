@@ -1,4 +1,5 @@
-use std::io::Write;
+use std::error::Error;
+use std::io::{Read, Write};
 
 use clap::{crate_version, App, AppSettings, ArgMatches};
 
@@ -12,30 +13,56 @@ pub(crate) fn app<'a, 'b>() -> App<'a, 'b> {
         .subcommand(init::subcommand())
 }
 
-pub(crate) fn dispatch<'a, W>(matches: &ArgMatches<'a>, stdout: &mut W)
-where
-    W: Write,
-{
-    match matches.subcommand() {
-        ("init", Some(init_matches)) => init::run(matches, &init_matches, stdout),
-        _ => unreachable!(),
-        // unreachable: Should have exited out with appropriate help or
-        // error message if no subcommand was given.
+pub(crate) type Result = std::result::Result<(), Box<dyn Error>>;
+
+pub(crate) struct Cli<'a> {
+    pub arg_matches: ArgMatches<'a>,
+    pub stdin: &'a mut dyn Read,
+    pub stdout: &'a mut dyn Write,
+}
+
+impl<'a> Cli<'a> {
+    pub fn run(&mut self) -> Result {
+        let matches = self.arg_matches.clone();
+        // ^^ Ugh. Need an independent copy of matches so we can still pass
+        // the Cli struct through to subcommand imps.
+
+        match matches.subcommand() {
+            ("init", Some(init_matches)) => init::run(self, &init_matches),
+            _ => unreachable!(),
+            // unreachable: Should have exited out with appropriate help or
+            // error message if no subcommand was given.
+        }
+    }
+
+    #[cfg(test)]
+    pub fn run_with_args<I, T>(itr: I) -> std::result::Result<Vec<u8>, Box<dyn Error>>
+    where
+        I: IntoIterator<Item = T>,
+        T: Into<std::ffi::OsString> + Clone,
+    {
+        let mut stdin = std::io::Cursor::new(Vec::new());
+        let mut stdout = Vec::new();
+
+        Cli {
+            arg_matches: app().get_matches_from(itr),
+            stdin: &mut stdin,
+            stdout: &mut stdout,
+        }
+        .run()?;
+
+        Ok(stdout)
     }
 }
 
-#[cfg(test)]
-use std::ffi::OsString;
+impl<'a> Write for Cli<'a> {
+    fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
+        self.stdout.write(buf)
+    }
 
-#[cfg(test)]
-pub(crate) fn dispatch_args<I, T, W>(itr: I, stdout: &mut W)
-where
-    I: IntoIterator<Item = T>,
-    T: Into<OsString> + Clone,
-    W: Write,
-{
-    let matches = app().get_matches_from(itr);
-    dispatch(&matches, stdout);
+    fn flush(&mut self) -> std::io::Result<()> {
+        self.stdout.flush()
+    }
 }
 
 #[cfg(test)]
