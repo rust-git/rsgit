@@ -18,7 +18,10 @@ pub(crate) fn run(cli: &mut Cli, init_matches: &ArgMatches) -> Result {
     let dir = init_matches.value_of("directory").unwrap();
 
     if dir == "fail" {
-        Err(Box::new(std::io::Error::new(std::io::ErrorKind::Other, "I don't like that name")))
+        Err(Box::new(std::io::Error::new(
+            std::io::ErrorKind::Other,
+            "I don't like that name",
+        )))
     } else {
         writeln!(cli, "INIT {}", dir)?;
         Ok(())
