@@ -10,7 +10,7 @@ path = "src/lib.rs"
 
 [[bin]]
 name = "rsgit"
-path = "src/cli/bin.rs"
+path = "src/bin.rs"
 required_features = ["clap"]
 
 # We use the C-language version of zlib for now because the Rust implementation
