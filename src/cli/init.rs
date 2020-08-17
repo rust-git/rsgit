@@ -35,6 +35,6 @@ mod tests {
     #[test]
     fn happy_path() {
         let stdout = Cli::run_with_args(vec!["rsgit", "init", "dir"]).unwrap();
-        assert_eq!(stdout.as_slice(), b"INIT hello");
+        assert_eq!(stdout.as_slice(), b"INIT dir\n");
     }
 }
