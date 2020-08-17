@@ -45,7 +45,7 @@ mod tests {
         let r_path = tempfile::tempdir().unwrap();
         let r_pathstr = r_path.path().to_str().unwrap();
 
-        let stdout = Cli::run_with_args(vec!["rsgit", "init", &r_pathstr]).unwrap();
+        let stdout = Cli::run_with_args(vec!["init", &r_pathstr]).unwrap();
 
         let expected_std = format!("Initialized empty Git repository in {}\n", r_pathstr);
 
@@ -59,7 +59,7 @@ mod tests {
 
     #[test]
     fn error_no_dir() {
-        let err = Cli::run_with_args(vec!["rsgit", "init"]).unwrap_err();
+        let err = Cli::run_with_args(vec!["init"]).unwrap_err();
 
         let errmsg = err.to_string();
         assert!(
@@ -71,7 +71,7 @@ mod tests {
 
     #[test]
     fn error_too_many_args() {
-        let err = Cli::run_with_args(vec!["rsgit", "init", "here", "and there"]).unwrap_err();
+        let err = Cli::run_with_args(vec!["init", "here", "and there"]).unwrap_err();
 
         let errmsg = err.to_string();
         assert!(

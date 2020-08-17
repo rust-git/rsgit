@@ -1,4 +1,8 @@
 use std::error::Error;
+
+#[cfg(test)]
+use std::ffi::OsString;
+
 use std::io::{Read, Write};
 
 use clap::{crate_version, App, AppSettings, ArgMatches};
@@ -36,16 +40,19 @@ impl<'a> Cli<'a> {
     }
 
     #[cfg(test)]
-    pub fn run_with_args<I, T>(itr: I) -> std::result::Result<Vec<u8>, Box<dyn Error>>
+    pub fn run_with_args<I, T>(args: I) -> std::result::Result<Vec<u8>, Box<dyn Error>>
     where
         I: IntoIterator<Item = T>,
-        T: Into<std::ffi::OsString> + Clone,
+        T: Into<OsString> + Clone,
     {
+        let mut args: Vec<OsString> = args.into_iter().map(|x| x.into()).collect();
+        args.insert(0, OsString::from("rsgit"));
+
         let mut stdin = std::io::Cursor::new(Vec::new());
         let mut stdout = Vec::new();
 
         Cli {
-            arg_matches: app().get_matches_from_safe(itr)?,
+            arg_matches: app().get_matches_from_safe(args)?,
             stdin: &mut stdin,
             stdout: &mut stdout,
         }
