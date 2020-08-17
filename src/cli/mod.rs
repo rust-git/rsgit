@@ -60,6 +60,7 @@ impl<'a> Write for Cli<'a> {
         self.stdout.write(buf)
     }
 
+    #[cfg(not(tarpaulin_include))]
     fn flush(&mut self) -> std::io::Result<()> {
         self.stdout.flush()
     }
