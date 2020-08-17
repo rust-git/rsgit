@@ -2,6 +2,9 @@ use std::io::{self, Write};
 
 mod cli;
 
+#[cfg(test)]
+pub(crate) mod test_support;
+
 #[allow(unused_must_use)]
 #[cfg(not(tarpaulin_include))]
 fn main() {

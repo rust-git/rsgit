@@ -45,7 +45,7 @@ impl<'a> Cli<'a> {
         let mut stdout = Vec::new();
 
         Cli {
-            arg_matches: app().get_matches_from_safe(itr).unwrap(),
+            arg_matches: app().get_matches_from_safe(itr)?,
             stdin: &mut stdin,
             stdout: &mut stdout,
         }
