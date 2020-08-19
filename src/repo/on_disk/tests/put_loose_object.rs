@@ -33,7 +33,7 @@ fn matches_command_line_git() {
     let o = Object::new(Kind::Blob, Box::new(TEST_CONTENT.to_vec())).unwrap();
     r.put_loose_object(&o).unwrap();
 
-    assert_eq!(dir_diff::is_different(tgr.path(), r_path).unwrap(), false);
+    assert!(!dir_diff::is_different(tgr.path(), r_path).unwrap());
 }
 
 #[test]
@@ -61,7 +61,7 @@ fn matches_command_line_git_large_file() {
     assert_eq!(object_id, o.id().to_string());
     r.put_loose_object(&o).unwrap();
 
-    assert_eq!(dir_diff::is_different(tgr.path(), r_path).unwrap(), false);
+    assert!(!dir_diff::is_different(tgr.path(), r_path).unwrap());
 }
 
 #[test]

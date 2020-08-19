@@ -46,10 +46,7 @@ fn matches_command_line_git() {
     let r_path = tempfile::tempdir().unwrap();
     OnDisk::init(r_path.path()).unwrap();
 
-    assert_eq!(
-        dir_diff::is_different(c_path, r_path.path()).unwrap(),
-        false
-    );
+    assert!(!dir_diff::is_different(c_path, r_path.path()).unwrap());
 }
 
 #[test]
