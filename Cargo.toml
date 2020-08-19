@@ -11,7 +11,6 @@ path = "src/lib.rs"
 [[bin]]
 name = "rsgit"
 path = "src/bin.rs"
-required_features = ["clap"]
 
 # We use the C-language version of zlib for now because the Rust implementation
 # doesn't match git's implementation byte-for-byte. Possible we could swap out
