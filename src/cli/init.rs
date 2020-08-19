@@ -50,11 +50,7 @@ mod tests {
         let expected_std = format!("Initialized empty Git repository in {}\n", r_pathstr);
 
         assert_eq!(stdout, expected_std.as_bytes());
-
-        assert_eq!(
-            dir_diff::is_different(c_path, r_path.path()).unwrap(),
-            false
-        );
+        assert!(!dir_diff::is_different(c_path, r_path.path()).unwrap());
     }
 
     #[test]
