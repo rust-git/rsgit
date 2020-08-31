@@ -7,6 +7,7 @@ use std::io::{Read, Write};
 
 use clap::{crate_version, App, AppSettings, ArgMatches};
 
+mod hash_object;
 mod init;
 
 pub(crate) fn app<'a, 'b>() -> App<'a, 'b> {
@@ -14,6 +15,7 @@ pub(crate) fn app<'a, 'b>() -> App<'a, 'b> {
         .version(crate_version!())
         .setting(AppSettings::SubcommandRequiredElseHelp)
         .setting(AppSettings::VersionlessSubcommands)
+        .subcommand(hash_object::subcommand())
         .subcommand(init::subcommand())
 }
 
