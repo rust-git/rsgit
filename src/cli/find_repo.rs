@@ -19,6 +19,7 @@ use rsgit::repo::{OnDisk, Result};
 #[allow(dead_code)] // TEMPORARY: Until other code actually uses this.
 pub fn from_path<P: AsRef<Path>>(path: P) -> Result<OnDisk> {
     // TO DO: Look in other places for repo.
+    // https://github.com/rust-git/rsgit/issues/80
     OnDisk::new(path)
 }
 
