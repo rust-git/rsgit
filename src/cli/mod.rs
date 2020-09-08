@@ -7,6 +7,7 @@ use std::io::{Read, Write};
 
 use clap::{crate_version, App, AppSettings, ArgMatches};
 
+mod find_repo;
 mod init;
 
 pub(crate) fn app<'a, 'b>() -> App<'a, 'b> {
