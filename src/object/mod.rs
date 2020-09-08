@@ -67,17 +67,20 @@ impl Object {
         self.content_source.len()
     }
 
-    /// Returns true if the object is empty.
+    /// Returns `true` if the object is empty.
     pub fn is_empty(&self) -> bool {
         self.len() == 0
     }
 
-    /// Returns a `BufRead` struct which can be used for reading the content.
+    /// Returns a [`BufRead`] struct which can be used for reading the content.
+    /// 
+    /// [`BufRead`]: https://doc.rust-lang.org/nightly/std/io/trait.BufRead.html
+
     pub fn open(&self) -> ContentSourceOpenResult {
         self.content_source.open()
     }
 
-    /// Returns true if the content of the object is valid for the type.
+    /// Returns `true` if the content of the object is valid for the type.
     pub fn is_valid(&self) -> ContentSourceResult<bool> {
         match self.kind {
             Kind::Blob => Ok(true),
@@ -87,7 +90,7 @@ impl Object {
         }
     }
 
-    /// Returns true if the content of the object is valid for the type
+    /// Returns `true` if the content of the object is valid for the type
     /// and the given platform's file system(s).
     #[cfg(not(tarpaulin_include))]
     pub fn is_valid_with_platform_checks(

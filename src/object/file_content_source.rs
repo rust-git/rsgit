@@ -5,7 +5,9 @@ use std::path::{Path, PathBuf};
 
 use super::{ContentSource, ContentSourceOpenResult};
 
-/// Implements `ContentSource` to read content from a file on disk.
+/// Implements [`ContentSource`] to read content from a file on disk.
+/// 
+/// [`ContentSource`]: trait.ContentSource.html
 pub struct FileContentSource {
     path: PathBuf,
     len: usize,
