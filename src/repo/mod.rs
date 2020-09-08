@@ -6,7 +6,7 @@
 //! While it includes built-in support for local on-disk repositories
 //! (see [`OnDisk`]), you could envision repositories stored entirely
 //! in memory, or on a remote file system or database.
-//! 
+//!
 //! [`OnDisk`]: struct.OnDisk.html
 
 use crate::object::Object;
@@ -31,7 +31,7 @@ pub trait Repo {
     /// Writes a loose object to the repository.
     ///
     /// This is analogous to [`git hash-object -w`].
-    /// 
+    ///
     /// [`git hash-object -w`]: https://git-scm.com/docs/git-hash-object#Documentation/git-hash-object.txt--w
     fn put_loose_object(&mut self, object: &Object) -> Result<()>;
 }

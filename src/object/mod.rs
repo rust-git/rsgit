@@ -73,7 +73,7 @@ impl Object {
     }
 
     /// Returns a [`BufRead`] struct which can be used for reading the content.
-    /// 
+    ///
     /// [`BufRead`]: https://doc.rust-lang.org/nightly/std/io/trait.BufRead.html
 
     pub fn open(&self) -> ContentSourceOpenResult {

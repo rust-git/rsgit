@@ -4,7 +4,7 @@ use std::vec::Vec;
 /// Result type for operations which depend on [`ContentSource.open()`].
 /// Since [`ContentSource`] may wrap arbitrary sources,
 /// it could return any arbitrary error type.
-/// 
+///
 /// [`ContentSource`]: trait.ContentSource.html
 /// [`ContentSource.open()`]: trait.ContentSource.html#tymethod.open
 pub type ContentSourceResult<T> = std::result::Result<T, Box<dyn std::error::Error>>;
@@ -12,7 +12,7 @@ pub type ContentSourceResult<T> = std::result::Result<T, Box<dyn std::error::Err
 /// Result type for [`ContentSource.open()`] call.
 /// Since [`ContentSource`] may wrap arbitrary sources,
 /// it could return any arbitrary error type.
-/// 
+///
 /// [`ContentSource`]: trait.ContentSource.html
 /// [`ContentSource.open()`]: trait.ContentSource.html#tymethod.open
 pub type ContentSourceOpenResult<'a> = ContentSourceResult<Box<dyn BufRead + 'a>>;
@@ -31,7 +31,7 @@ pub trait ContentSource {
     }
 
     /// Returns a [`BufRead`] struct which can be used for reading the content.
-    /// 
+    ///
     /// [`BufRead`]: https://doc.rust-lang.org/nightly/std/io/trait.BufRead.html
     fn open(&self) -> ContentSourceOpenResult;
 }

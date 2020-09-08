@@ -26,7 +26,7 @@ use flate2::Compression;
 ///
 /// That said, it does intentionally use the same `.git` folder format as command-line
 /// `git` so that results may be compared for similar operations.
-/// 
+///
 /// [`Repo`]: trait.Repo.html
 #[derive(Debug)]
 pub struct OnDisk {
@@ -40,7 +40,7 @@ impl OnDisk {
     /// `work_dir` should be the top-level working directory. A `.git` directory should
     /// exist at this path. Use [`init`] function to create an empty on-disk repository if
     /// necessary.
-    /// 
+    ///
     /// [`init`]: #method.init
     pub fn new<P: AsRef<Path>>(work_dir: P) -> Result<Self> {
         let work_dir = work_dir.as_ref().to_path_buf();
