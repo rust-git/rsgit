@@ -3,19 +3,19 @@ use std::path::Path;
 
 use rsgit::repo::{OnDisk, Result};
 
-/// Discover a git repo starting from the given path.
-///
-/// Git comes with many configuration options and algorithms
-/// for finding a repo. Some of these may eventually be
-/// replicated here, which is why this function should be
-/// called for repo discovery.
-///
-/// For now, however, this handles only the most simple case
-/// where there is a `.git` directory nested within the
-/// given path.
-///
-/// Returns a `Result` with `rsgit::repo::OnDisk` or
-/// `rsgit::repo::Error` if no such repo exists.
+// Discover a git repo starting from the given path.
+//
+// Git comes with many configuration options and algorithms
+// for finding a repo. Some of these may eventually be
+// replicated here, which is why this function should be
+// called for repo discovery.
+//
+// For now, however, this handles only the most simple case
+// where there is a `.git` directory nested within the
+// given path.
+//
+// Returns a `Result` with `rsgit::repo::OnDisk` or
+// `rsgit::repo::Error` if no such repo exists.
 #[allow(dead_code)] // TEMPORARY: Until other code actually uses this.
 pub fn from_path<P: AsRef<Path>>(path: P) -> Result<OnDisk> {
     // TO DO: Look in other places for repo.
@@ -23,19 +23,19 @@ pub fn from_path<P: AsRef<Path>>(path: P) -> Result<OnDisk> {
     OnDisk::new(path)
 }
 
-/// Discover a git repo starting from the current working directory.
-///
-/// Git comes with many configuration options and algorithms
-/// for finding a repo. Some of these may eventually be
-/// replicated here, which is why this function should be
-/// called for repo discovery.
-///
-/// For now, however, this handles only the most simple case
-/// where there is a `.git` directory nested within the
-/// given path.
-///
-/// Returns a `Result` with `rsgit::repo::OnDisk` or
-/// `rsgit::repo::Error` if no such repo exists.
+// Discover a git repo starting from the current working directory.
+//
+// Git comes with many configuration options and algorithms
+// for finding a repo. Some of these may eventually be
+// replicated here, which is why this function should be
+// called for repo discovery.
+//
+// For now, however, this handles only the most simple case
+// where there is a `.git` directory nested within the
+// given path.
+//
+// Returns a `Result` with `rsgit::repo::OnDisk` or
+// `rsgit::repo::Error` if no such repo exists.
 #[allow(dead_code)] // TEMPORARY: Until other code actually uses this.
 #[cfg(not(tarpaulin_include))]
 pub fn from_current_dir() -> Result<OnDisk> {

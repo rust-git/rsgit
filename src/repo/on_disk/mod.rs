@@ -18,7 +18,7 @@ use super::{Error, Repo, Result};
 use flate2::write::ZlibEncoder;
 use flate2::Compression;
 
-/// Implementation of `rsgit::Repo` that stores content on the local file system.
+/// Implementation of [`Repo`] that stores content on the local file system.
 ///
 /// _IMPORTANT NOTE:_ This is intended as a reference implementation largely
 /// for testing purposes and may not necessarily handle all of the edge cases that
@@ -26,6 +26,8 @@ use flate2::Compression;
 ///
 /// That said, it does intentionally use the same `.git` folder format as command-line
 /// `git` so that results may be compared for similar operations.
+///
+/// [`Repo`]: trait.Repo.html
 #[derive(Debug)]
 pub struct OnDisk {
     work_dir: PathBuf,
@@ -36,8 +38,10 @@ impl OnDisk {
     /// Create an on-disk git repository.
     ///
     /// `work_dir` should be the top-level working directory. A `.git` directory should
-    /// exist at this path. Use `init` function to create an empty on-disk repository if
+    /// exist at this path. Use [`init`] function to create an empty on-disk repository if
     /// necessary.
+    ///
+    /// [`init`]: #method.init
     pub fn new<P: AsRef<Path>>(work_dir: P) -> Result<Self> {
         let work_dir = work_dir.as_ref().to_path_buf();
         if !work_dir.exists() {
@@ -54,7 +58,9 @@ impl OnDisk {
 
     /// Creates a new, empty git repository on the local file system.
     ///
-    /// Analogous to [`git init`](https://git-scm.com/docs/git-init).
+    /// Analogous to [`git init`].
+    ///
+    /// [`git init`]: https://git-scm.com/docs/git-init
     pub fn init<P: AsRef<Path>>(work_dir: P) -> Result<Self> {
         let git_dir = work_dir.as_ref().join(".git");
         if git_dir.exists() {
