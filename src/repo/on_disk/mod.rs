@@ -72,7 +72,7 @@ impl OnDisk {
         create_refs_dir(&git_dir)?;
 
         Ok(OnDisk {
-            work_dir: work_dir.to_path_buf(),
+            work_dir: work_dir.as_ref().to_path_buf(),
             git_dir,
         })
     }
