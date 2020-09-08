@@ -38,8 +38,8 @@ impl OnDisk {
     /// `work_dir` should be the top-level working directory. A `.git` directory should
     /// exist at this path. Use `init` function to create an empty on-disk repository if
     /// necessary.
-    pub fn new(work_dir: &Path) -> Result<Self> {
-        let work_dir = work_dir.to_path_buf();
+    pub fn new<P: AsRef<Path>>(work_dir: P) -> Result<Self> {
+        let work_dir = work_dir.as_ref().to_path_buf();
         if !work_dir.exists() {
             return Err(Error::WorkDirDoesntExist(work_dir));
         }
@@ -55,8 +55,8 @@ impl OnDisk {
     /// Creates a new, empty git repository on the local file system.
     ///
     /// Analogous to [`git init`](https://git-scm.com/docs/git-init).
-    pub fn init(work_dir: &Path) -> Result<Self> {
-        let git_dir = work_dir.join(".git");
+    pub fn init<P: AsRef<Path>>(work_dir: P) -> Result<Self> {
+        let git_dir = work_dir.as_ref().join(".git");
         if git_dir.exists() {
             return Err(Error::GitDirShouldntExist(git_dir));
         }
@@ -72,7 +72,7 @@ impl OnDisk {
         create_refs_dir(&git_dir)?;
 
         Ok(OnDisk {
-            work_dir: work_dir.to_path_buf(),
+            work_dir: work_dir.as_ref().to_path_buf(),
             git_dir,
         })
     }
