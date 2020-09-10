@@ -23,7 +23,7 @@ pub(crate) fn subcommand<'a, 'b>() -> App<'a, 'b> {
         .arg(Arg::with_name("literally").help("Bypass validity checks"))
 }
 
-pub(crate) fn run(cli: &mut Cli, init_matches: &ArgMatches) -> Result {
+pub(crate) fn run(_cli: &mut Cli, _init_matches: &ArgMatches) -> Result {
     // TO DO: On-disk repo discovery.
 
     // TO DO: Parse cmd-line opts.

@@ -7,6 +7,7 @@ use std::io::{Read, Write};
 
 use clap::{crate_version, App, AppSettings, ArgMatches};
 
+mod find_repo;
 mod hash_object;
 mod init;
 
@@ -34,7 +35,8 @@ impl<'a> Cli<'a> {
         // the Cli struct through to subcommand imps.
 
         match matches.subcommand() {
-            ("init", Some(init_matches)) => init::run(self, &init_matches),
+            ("hash-object", Some(m)) => hash_object::run(self, &m),
+            ("init", Some(m)) => init::run(self, &m),
             _ => unreachable!(),
             // unreachable: Should have exited out with appropriate help or
             // error message if no subcommand was given.

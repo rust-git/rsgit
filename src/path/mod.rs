@@ -21,8 +21,10 @@ pub struct Path<'a> {
 }
 
 /// Represents a list of bytes (typically, but not necessarily UTF-8)
-/// that is a valid path *segment* in a git repo. (Unlike `Path`,
+/// that is a valid path *segment* in a git repo. (Unlike [`Path`],
 /// a `PathSegment` may not contain a `/` character.)
+///
+/// [`Path`]: struct.Path.html
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct PathSegment<'a> {
     path: &'a [u8],
@@ -95,8 +97,10 @@ impl<'a> Path<'a> {
     }
 
     /// Convert the provided byte vector to a `Path` struct if it is acceptable
-    /// as a git path. In addition to the typical constraints enforced via `new()`,
+    /// as a git path. In addition to the typical constraints enforced via [`new()`],
     /// also check platform-specific rules.
+    ///
+    /// [`new()`]: #method.new
     #[cfg(not(tarpaulin_include))]
     pub fn new_with_platform_checks(
         path: &'a [u8],
@@ -142,8 +146,10 @@ impl<'a> PathSegment<'a> {
     }
 
     /// Convert the provided byte vector to a `PathSegment` struct if it is acceptable
-    /// as a git path. In addition to the typical constraints enforced via `new()`,
+    /// as a git path. In addition to the typical constraints enforced via [`new()`],
     /// also check platform-specific rules.
+    ///
+    /// [`new()`]: #method.new
     #[cfg(not(tarpaulin_include))]
     pub fn new_with_platform_checks(
         path: &'a [u8],
