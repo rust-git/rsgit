@@ -1,7 +1,7 @@
 // use std::io::Write;
 // use std::path::Path;
 
-use super::{Cli, Result};
+use super::{Cli, Result, find_repo};
 
 // use rsgit::repo::OnDisk;
 
@@ -24,7 +24,7 @@ pub(crate) fn subcommand<'a, 'b>() -> App<'a, 'b> {
 }
 
 pub(crate) fn run(_cli: &mut Cli, _init_matches: &ArgMatches) -> Result {
-    // TO DO: On-disk repo discovery.
+    let _repo = find_repo::from_current_dir()?;
 
     // TO DO: Parse cmd-line opts.
 
