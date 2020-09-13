@@ -1,9 +1,9 @@
-// use std::io::Write;
-// use std::path::Path;
+use std::error::Error;
 
-use super::{Cli, Result, find_repo};
+use super::{find_repo, Cli};
 
 // use rsgit::repo::OnDisk;
+use rsgit::object::Object;
 
 use clap::{App, Arg, ArgMatches, SubCommand};
 
@@ -13,6 +13,7 @@ pub(crate) fn subcommand<'a, 'b>() -> App<'a, 'b> {
         .arg(
             Arg::with_name("t")
                 .short("t")
+                .value_name("type")
                 .help("Specify the type (default 'blob')"),
         )
         .arg(
@@ -20,11 +21,18 @@ pub(crate) fn subcommand<'a, 'b>() -> App<'a, 'b> {
                 .short("w")
                 .help("Actually write the object into the object database"),
         )
-        .arg(Arg::with_name("literally").help("Bypass validity checks"))
+        .arg(
+            Arg::with_name("literally")
+                .long("literally")
+                .help("Bypass validity checks"),
+        )
+        .arg(Arg::with_name("file").required(true))
 }
 
-pub(crate) fn run(_cli: &mut Cli, _init_matches: &ArgMatches) -> Result {
+pub(crate) fn run(_cli: &mut Cli, args: &ArgMatches) -> super::Result {
     let _repo = find_repo::from_current_dir()?;
+
+    let _object = object_from_args(&args)?;
 
     // TO DO: Parse cmd-line opts.
 
@@ -32,6 +40,12 @@ pub(crate) fn run(_cli: &mut Cli, _init_matches: &ArgMatches) -> Result {
 
     Ok(())
 }
+
+fn object_from_args(args: &ArgMatches) -> Result<Object, Box<dyn Error>> {
+    let type = type_from_args(args: &ArgMatches)
+}
+
+fn type_from_args(args: &ArgMatches) ->
 
 // #[cfg(test)]
 // mod tests {
