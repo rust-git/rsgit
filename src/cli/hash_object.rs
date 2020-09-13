@@ -1,11 +1,8 @@
-use std::error::Error;
+use super::{find_repo, Cli, Result};
 
-use super::{find_repo, Cli};
+use rsgit::object::{FileContentSource, Kind, Object};
 
-// use rsgit::repo::OnDisk;
-use rsgit::object::Object;
-
-use clap::{App, Arg, ArgMatches, SubCommand};
+use clap::{App, Arg, ArgMatches, Error, ErrorKind, SubCommand};
 
 pub(crate) fn subcommand<'a, 'b>() -> App<'a, 'b> {
     SubCommand::with_name("hash-object")
@@ -29,23 +26,51 @@ pub(crate) fn subcommand<'a, 'b>() -> App<'a, 'b> {
         .arg(Arg::with_name("file").required(true))
 }
 
-pub(crate) fn run(_cli: &mut Cli, args: &ArgMatches) -> super::Result {
+pub(crate) fn run(_cli: &mut Cli, args: &ArgMatches) -> Result<()> {
     let _repo = find_repo::from_current_dir()?;
-
     let _object = object_from_args(&args)?;
 
-    // TO DO: Parse cmd-line opts.
+    // TO DO: Check validity of object (if not --literally).
 
-    // TO DO: Hash the object, etc.
+    // TO DO: Write object to repo (if -w).
+
+    // TO DO: Write object ID.
 
     Ok(())
 }
 
-fn object_from_args(args: &ArgMatches) -> Result<Object, Box<dyn Error>> {
-    let type = type_from_args(args: &ArgMatches)
+fn object_from_args(args: &ArgMatches) -> Result<Object> {
+    let kind = type_from_args(&args)?;
+    let content_source = content_source_from_args(&args)?;
+    let object = Object::new(kind, Box::new(content_source))?;
+    Ok(object)
 }
 
-fn type_from_args(args: &ArgMatches) ->
+fn type_from_args(args: &ArgMatches) -> Result<Kind> {
+    match args.value_of("t") {
+        Some(type_str) => match type_str {
+            "blob" => Ok(Kind::Blob),
+            "commit" => Ok(Kind::Commit),
+            "tag" => Ok(Kind::Tag),
+            "tree" => Ok(Kind::Tree),
+            _ => Err(Box::new(Error {
+                message: "-t must be one of blob, commit, tag, or tree".to_string(),
+                kind: ErrorKind::InvalidValue,
+                info: None,
+            })),
+        },
+        None => Ok(Kind::Blob),
+    }
+}
+
+fn content_source_from_args(args: &ArgMatches) -> Result<FileContentSource> {
+    // Justification for using unwrap() here:
+    // CLAP should have errored out before this point
+    // if there was no "file" argument.
+    let file = args.value_of("file").unwrap();
+    let content_source = FileContentSource::new(file)?;
+    Ok(content_source)
+}
 
 // #[cfg(test)]
 // mod tests {
