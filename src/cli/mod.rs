@@ -18,7 +18,7 @@ pub(crate) fn app<'a, 'b>() -> App<'a, 'b> {
         .subcommand(init::subcommand())
 }
 
-pub(crate) type Result = std::result::Result<(), Box<dyn Error>>;
+pub(crate) type Result<T> = std::result::Result<T, Box<dyn Error>>;
 
 pub(crate) struct Cli<'a> {
     pub arg_matches: ArgMatches<'a>,
@@ -27,7 +27,7 @@ pub(crate) struct Cli<'a> {
 }
 
 impl<'a> Cli<'a> {
-    pub fn run(&mut self) -> Result {
+    pub fn run(&mut self) -> Result<()> {
         let matches = self.arg_matches.clone();
         // ^^ Ugh. Need an independent copy of matches so we can still pass
         // the Cli struct through to subcommand imps.
