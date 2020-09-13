@@ -17,7 +17,7 @@ pub(crate) fn subcommand<'a, 'b>() -> App<'a, 'b> {
         )
 }
 
-pub(crate) fn run(cli: &mut Cli, init_matches: &ArgMatches) -> Result {
+pub(crate) fn run(cli: &mut Cli, init_matches: &ArgMatches) -> Result<()> {
     let dir = init_matches.value_of("directory").unwrap();
 
     let path = Path::new(dir);
