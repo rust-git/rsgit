@@ -26,6 +26,9 @@ pub use kind::Kind;
 
 pub(crate) mod parse_utils;
 
+mod read_content_source;
+pub use read_content_source::ReadContentSource;
+
 /// Describes a single object stored (or about to be stored) in a git repository.
 ///
 /// This struct is constructed, modified, and shared as a working description of
