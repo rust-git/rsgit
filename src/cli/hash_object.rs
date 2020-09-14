@@ -2,7 +2,7 @@ use std::io::Write;
 
 use super::{find_repo, Cli, Result};
 
-use rsgit::object::{FileContentSource, Kind, Object};
+use rsgit::object::{ContentSource, FileContentSource, Kind, Object, ReadContentSource};
 use rsgit::repo::Repo;
 
 use clap::{App, Arg, ArgMatches, Error, ErrorKind, SubCommand};
@@ -22,15 +22,20 @@ pub(crate) fn subcommand<'a, 'b>() -> App<'a, 'b> {
                 .help("Actually write the object into the object database"),
         )
         .arg(
+            Arg::with_name("stdin")
+                .long("stdin")
+                .help("Read the object from standard input instead of from a file"),
+        )
+        .arg(
             Arg::with_name("literally")
                 .long("literally")
                 .help("Bypass validity checks"),
         )
-        .arg(Arg::with_name("file").required(true))
+        .arg(Arg::with_name("file"))
 }
 
 pub(crate) fn run(cli: &mut Cli, args: &ArgMatches) -> Result<()> {
-    let object = object_from_args(&args)?;
+    let object = object_from_args(cli, &args)?;
 
     if !args.is_present("literally") && !object.is_valid()? {
         return Err(Box::new(Error {
@@ -50,10 +55,10 @@ pub(crate) fn run(cli: &mut Cli, args: &ArgMatches) -> Result<()> {
     Ok(())
 }
 
-fn object_from_args(args: &ArgMatches) -> Result<Object> {
+fn object_from_args(cli: &mut Cli, args: &ArgMatches) -> Result<Object> {
     let kind = type_from_args(&args)?;
-    let content_source = content_source_from_args(&args)?;
-    let object = Object::new(kind, Box::new(content_source))?;
+    let content_source = content_source_from_args(cli, &args)?;
+    let object = Object::new(kind, content_source)?;
     Ok(object)
 }
 
@@ -74,13 +79,21 @@ fn type_from_args(args: &ArgMatches) -> Result<Kind> {
     }
 }
 
-fn content_source_from_args(args: &ArgMatches) -> Result<FileContentSource> {
-    // Justification for using unwrap() here:
-    // CLAP should have errored out before this point
-    // if there was no "file" argument.
-    let file = args.value_of("file").unwrap();
-    let content_source = FileContentSource::new(file)?;
-    Ok(content_source)
+fn content_source_from_args(cli: &mut Cli, args: &ArgMatches) -> Result<Box<dyn ContentSource>> {
+    let stdin = args.is_present("stdin");
+    let file = args.value_of("file");
+
+    if file.is_some() && !stdin {
+        Ok(Box::new(FileContentSource::new(file.unwrap())?))
+    } else if stdin && file.is_none() {
+        Ok(Box::new(ReadContentSource::new(&mut cli.stdin)?))
+    } else {
+        Err(Box::new(Error {
+            message: "content source must be either --stdin or a file path".to_string(),
+            kind: ErrorKind::MissingRequiredArgument,
+            info: None,
+        }))
+    }
 }
 
 // #[cfg(test)]
