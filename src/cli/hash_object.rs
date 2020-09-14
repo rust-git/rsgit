@@ -28,9 +28,15 @@ pub(crate) fn subcommand<'a, 'b>() -> App<'a, 'b> {
 
 pub(crate) fn run(_cli: &mut Cli, args: &ArgMatches) -> Result<()> {
     let _repo = find_repo::from_current_dir()?;
-    let _object = object_from_args(&args)?;
+    let object = object_from_args(&args)?;
 
-    // TO DO: Check validity of object (if not --literally).
+    if !args.is_present("literally") && !object.is_valid()? {
+        return Err(Box::new(Error {
+            message: format!("corrupt {}", args.value_of("t").unwrap()),
+            kind: ErrorKind::InvalidValue,
+            info: None,
+        }));
+    }
 
     // TO DO: Write object to repo (if -w).
 
