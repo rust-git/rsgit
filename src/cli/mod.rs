@@ -44,7 +44,10 @@ impl<'a> Cli<'a> {
     }
 
     #[cfg(test)]
-    pub fn run_with_args<I, T>(args: I) -> std::result::Result<Vec<u8>, Box<dyn Error>>
+    pub fn run_with_stdin_and_args<I, T>(
+        stdin: Vec<u8>,
+        args: I,
+    ) -> std::result::Result<Vec<u8>, Box<dyn Error>>
     where
         I: IntoIterator<Item = T>,
         T: Into<OsString> + Clone,
@@ -52,7 +55,7 @@ impl<'a> Cli<'a> {
         let mut args: Vec<OsString> = args.into_iter().map(|x| x.into()).collect();
         args.insert(0, OsString::from("rsgit"));
 
-        let mut stdin = std::io::Cursor::new(Vec::new());
+        let mut stdin = std::io::Cursor::new(stdin);
         let mut stdout = Vec::new();
 
         Cli {
@@ -63,6 +66,16 @@ impl<'a> Cli<'a> {
         .run()?;
 
         Ok(stdout)
+    }
+
+    #[cfg(test)]
+    pub fn run_with_args<I, T>(args: I) -> std::result::Result<Vec<u8>, Box<dyn Error>>
+    where
+        I: IntoIterator<Item = T>,
+        T: Into<OsString> + Clone,
+    {
+        let stdin: Vec<u8> = Vec::new();
+        Cli::run_with_stdin_and_args(stdin, args)
     }
 }
 

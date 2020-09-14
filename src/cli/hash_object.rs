@@ -96,48 +96,60 @@ fn content_source_from_args(cli: &mut Cli, args: &ArgMatches) -> Result<Box<dyn 
     }
 }
 
-// #[cfg(test)]
-// mod tests {
-//     use crate::cli::Cli;
-//     use crate::test_support::TempGitRepo;
+#[cfg(test)]
+mod tests {
+    use crate::cli::Cli;
+    // use crate::test_support::TempGitRepo;
 
-//     #[test]
-//     fn matches_command_line_git() {
-//         let tgr = TempGitRepo::new();
-//         let c_path = tgr.path();
+    #[test]
+    fn hash_with_no_repo() {
+        // $ echo 'test content' | git hash-object --stdin
+        // d670460b4b4aece5915caf5c68d12f560a9fe3e4
 
-//         let r_path = tempfile::tempdir().unwrap();
-//         let r_pathstr = r_path.path().to_str().unwrap();
+        let stdin: Vec<u8> = b"test content\n".to_vec();
+        let stdout = Cli::run_with_stdin_and_args(stdin, vec!["hash-object", "--stdin"]).unwrap();
 
-//         let stdout = Cli::run_with_args(vec!["init", &r_pathstr]).unwrap();
+        let expected_stdout = "d670460b4b4aece5915caf5c68d12f560a9fe3e4\n";
+        assert_eq!(stdout, expected_stdout.as_bytes());
+    }
 
-//         let expected_std = format!("Initialized empty Git repository in {}\n", r_pathstr);
+    //     #[test]
+    //     fn matches_command_line_git() {
+    //         let tgr = TempGitRepo::new();
+    //         let c_path = tgr.path();
 
-//         assert_eq!(stdout, expected_std.as_bytes());
-//         assert!(!dir_diff::is_different(c_path, r_path.path()).unwrap());
-//     }
+    //         let r_path = tempfile::tempdir().unwrap();
+    //         let r_pathstr = r_path.path().to_str().unwrap();
 
-//     #[test]
-//     fn error_no_dir() {
-//         let err = Cli::run_with_args(vec!["init"]).unwrap_err();
+    //         let stdout = Cli::run_with_args(vec!["init", &r_pathstr]).unwrap();
 
-//         let errmsg = err.to_string();
-//         assert!(
-//             errmsg.contains("required arguments were not provided"),
-//             "\nincorrect error message:\n\n{}",
-//             errmsg
-//         );
-//     }
+    //         let expected_std = format!("Initialized empty Git repository in {}\n", r_pathstr);
 
-//     #[test]
-//     fn error_too_many_args() {
-//         let err = Cli::run_with_args(vec!["init", "here", "and there"]).unwrap_err();
+    //         assert_eq!(stdout, expected_std.as_bytes());
+    //         assert!(!dir_diff::is_different(c_path, r_path.path()).unwrap());
+    //     }
 
-//         let errmsg = err.to_string();
-//         assert!(
-//             errmsg.contains("wasn't expected"),
-//             "\nincorrect error message:\n\n{}",
-//             errmsg
-//         );
-//     }
-// }
+    //     #[test]
+    //     fn error_no_dir() {
+    //         let err = Cli::run_with_args(vec!["init"]).unwrap_err();
+
+    //         let errmsg = err.to_string();
+    //         assert!(
+    //             errmsg.contains("required arguments were not provided"),
+    //             "\nincorrect error message:\n\n{}",
+    //             errmsg
+    //         );
+    //     }
+
+    //     #[test]
+    //     fn error_too_many_args() {
+    //         let err = Cli::run_with_args(vec!["init", "here", "and there"]).unwrap_err();
+
+    //         let errmsg = err.to_string();
+    //         assert!(
+    //             errmsg.contains("wasn't expected"),
+    //             "\nincorrect error message:\n\n{}",
+    //             errmsg
+    //         );
+    //     }
+}
