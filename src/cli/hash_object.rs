@@ -1,6 +1,9 @@
+use std::io::Write;
+
 use super::{find_repo, Cli, Result};
 
 use rsgit::object::{FileContentSource, Kind, Object};
+use rsgit::repo::Repo;
 
 use clap::{App, Arg, ArgMatches, Error, ErrorKind, SubCommand};
 
@@ -26,8 +29,7 @@ pub(crate) fn subcommand<'a, 'b>() -> App<'a, 'b> {
         .arg(Arg::with_name("file").required(true))
 }
 
-pub(crate) fn run(_cli: &mut Cli, args: &ArgMatches) -> Result<()> {
-    let _repo = find_repo::from_current_dir()?;
+pub(crate) fn run(cli: &mut Cli, args: &ArgMatches) -> Result<()> {
     let object = object_from_args(&args)?;
 
     if !args.is_present("literally") && !object.is_valid()? {
@@ -38,9 +40,12 @@ pub(crate) fn run(_cli: &mut Cli, args: &ArgMatches) -> Result<()> {
         }));
     }
 
-    // TO DO: Write object to repo (if -w).
+    if args.is_present("w") {
+        let mut repo = find_repo::from_current_dir()?;
+        repo.put_loose_object(&object)?;
+    }
 
-    // TO DO: Write object ID.
+    writeln!(cli, "{}", object.id())?;
 
     Ok(())
 }
