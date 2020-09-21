@@ -100,10 +100,10 @@ fn content_source_from_args(cli: &mut Cli, args: &ArgMatches) -> Result<Box<dyn 
 mod tests {
     use std::fs::File;
     use std::io::Write;
-    use std::process::Command;
+    use std::process::{Command, Stdio};
 
     use crate::cli::Cli;
-    // use crate::test_support::TempGitRepo;
+    use crate::test_support::TempGitRepo;
 
     use tempfile::TempDir;
 
@@ -144,21 +144,39 @@ mod tests {
         assert_eq!(rsgit_stdout, cgit_stdout);
     }
 
-    //     #[test]
-    //     fn matches_command_line_git() {
-    //         let tgr = TempGitRepo::new();
-    //         let c_path = tgr.path();
+    #[test]
+    fn matches_command_line_git() {
+        let stdin: Vec<u8> = b"test content\n".to_vec();
 
-    //         let r_path = tempfile::tempdir().unwrap();
-    //         let r_pathstr = r_path.path().to_str().unwrap();
+        let c_tgr = TempGitRepo::new();
+        let c_path = c_tgr.path();
 
-    //         let stdout = Cli::run_with_args(vec!["init", &r_pathstr]).unwrap();
+        let mut cgit = Command::new("git")
+            .current_dir(c_path)
+            .stdin(Stdio::piped())
+            .args(&["hash-object", "-w", "--stdin"])
+            .spawn()
+            .unwrap();
 
-    //         let expected_std = format!("Initialized empty Git repository in {}\n", r_pathstr);
+        {
+            let cgit_stdin = cgit.stdin.as_mut().unwrap();
+            cgit_stdin.write_all(&stdin).unwrap();
+        }
 
-    //         assert_eq!(stdout, expected_std.as_bytes());
-    //         assert!(!dir_diff::is_different(c_path, r_path.path()).unwrap());
-    //     }
+        let c_stdout = cgit.wait_with_output().unwrap().stdout;
+
+        let r_tgr = TempGitRepo::new();
+        let r_path = r_tgr.path();
+
+        // STOP: Need to temporarily change CWD for this to work
+        // as intended. We'll be back.
+        let r_stdout =
+            Cli::run_with_stdin_and_args(stdin, vec!["hash-object", "-w", "--stdin"]).unwrap();
+
+        assert_eq!(c_stdout, r_stdout);
+
+        assert!(!dir_diff::is_different(c_path, r_path).unwrap());
+    }
 
     //     #[test]
     //     fn error_no_dir() {
