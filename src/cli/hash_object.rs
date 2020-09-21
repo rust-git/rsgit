@@ -103,7 +103,7 @@ mod tests {
     use std::process::{Command, Stdio};
 
     use crate::cli::Cli;
-    use crate::test_support::TempGitRepo;
+    use crate::test_support::{TempCwd, TempGitRepo};
 
     use tempfile::TempDir;
 
@@ -168,12 +168,13 @@ mod tests {
         let r_tgr = TempGitRepo::new();
         let r_path = r_tgr.path();
 
-        // STOP: Need to temporarily change CWD for this to work
-        // as intended. We'll be back.
+        let _r_cwd = TempCwd::new(r_path);
         let r_stdout =
             Cli::run_with_stdin_and_args(stdin, vec!["hash-object", "-w", "--stdin"]).unwrap();
 
         assert_eq!(c_stdout, r_stdout);
+        // This assetion is failing in a way that suggests we aren't
+        // actually feeding stdin as expected to C git.
 
         assert!(!dir_diff::is_different(c_path, r_path).unwrap());
     }
