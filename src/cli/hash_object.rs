@@ -98,8 +98,14 @@ fn content_source_from_args(cli: &mut Cli, args: &ArgMatches) -> Result<Box<dyn 
 
 #[cfg(test)]
 mod tests {
+    use std::fs::File;
+    use std::io::Write;
+    use std::process::Command;
+
     use crate::cli::Cli;
     // use crate::test_support::TempGitRepo;
+
+    use tempfile::TempDir;
 
     #[test]
     fn hash_with_no_repo() {
@@ -111,6 +117,31 @@ mod tests {
 
         let expected_stdout = "d670460b4b4aece5915caf5c68d12f560a9fe3e4\n";
         assert_eq!(stdout, expected_stdout.as_bytes());
+    }
+
+    #[test]
+    fn large_file_on_disk_no_repo() {
+        let dir = TempDir::new().unwrap();
+        let path = dir.as_ref().join("example");
+
+        {
+            let mut f = File::create(&path).unwrap();
+            for _ in 0..1000 {
+                f.write_all(b"foobar").unwrap();
+            }
+        }
+
+        let path_str = path.to_str().unwrap();
+
+        let rsgit_stdout = Cli::run_with_args(vec!["hash-object", path_str]).unwrap();
+
+        let cgit_stdout = Command::new("git")
+            .args(&["hash-object", path_str])
+            .output()
+            .unwrap()
+            .stdout;
+
+        assert_eq!(rsgit_stdout, cgit_stdout);
     }
 
     //     #[test]
