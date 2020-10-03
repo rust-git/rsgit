@@ -1,5 +1,7 @@
-use std::io::{BufRead, Cursor};
-use std::vec::Vec;
+use std::{
+    io::{BufRead, Cursor},
+    vec::Vec,
+};
 
 /// Result type for operations which depend on [`ContentSource.open()`].
 /// Since [`ContentSource`] may wrap arbitrary sources,

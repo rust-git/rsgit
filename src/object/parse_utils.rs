@@ -118,9 +118,9 @@ pub(crate) fn split_once<'a>(s: &'a [u8], c: &u8) -> (&'a [u8], &'a [u8]) {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
     use std::io::Cursor;
+
+    use super::*;
 
     #[test]
     fn read_line_fn() {

@@ -1,6 +1,6 @@
 use std::io::{self, Cursor, Error, ErrorKind, Read};
 
-use super::{ContentSource, ContentSourceOpenResult};
+use crate::object::{ContentSource, ContentSourceOpenResult};
 
 /// Implements [`ContentSource`] to read content from
 /// an arbitrary [`Read`] struct (often `stdin`).
@@ -53,9 +53,9 @@ impl ContentSource for ReadContentSource {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
     use std::io::{Cursor, Result};
+
+    use super::*;
 
     #[test]
     fn happy_path() {

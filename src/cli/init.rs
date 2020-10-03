@@ -1,11 +1,9 @@
-use std::io::Write;
-use std::path::Path;
+use std::{io::Write, path::Path};
 
 use super::{Cli, Result};
 
-use rsgit::repo::OnDisk;
-
 use clap::{App, Arg, ArgMatches, SubCommand};
+use rsgit::repo::OnDisk;
 
 pub(crate) fn subcommand<'a, 'b>() -> App<'a, 'b> {
     SubCommand::with_name("init")
@@ -34,8 +32,7 @@ pub(crate) fn run(cli: &mut Cli, init_matches: &ArgMatches) -> Result<()> {
 
 #[cfg(test)]
 mod tests {
-    use crate::cli::Cli;
-    use crate::test_support::TempGitRepo;
+    use crate::{cli::Cli, test_support::TempGitRepo};
 
     #[test]
     fn matches_command_line_git() {

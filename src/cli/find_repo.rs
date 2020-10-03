@@ -1,5 +1,4 @@
-use std::env;
-use std::path::Path;
+use std::{env, path::Path};
 
 use rsgit::repo::{OnDisk, Result};
 
@@ -50,9 +49,9 @@ pub fn from_current_dir() -> Result<OnDisk> {
 mod tests {
     use super::*;
 
-    use rsgit::repo::Error;
-
     use crate::test_support::TempGitRepo;
+
+    use rsgit::repo::Error;
 
     #[test]
     fn simple_case() {

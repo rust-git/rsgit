@@ -1,5 +1,7 @@
-use std::env;
-use std::path::{Path, PathBuf};
+use std::{
+    env,
+    path::{Path, PathBuf},
+};
 
 // A TempCwd allows you to temporarily change the current
 // working directory for the host process.
@@ -37,9 +39,9 @@ impl Drop for TempCwd {
 
 #[cfg(test)]
 mod tests {
-    use super::TempCwd;
-
     use std::env;
+
+    use super::TempCwd;
 
     #[test]
     fn temp_cwd() {

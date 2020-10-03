@@ -1,10 +1,9 @@
-use super::{parse_utils, ContentSource, ContentSourceResult};
+use std::{cmp::Ordering, collections::HashSet, io::BufRead};
 
-use crate::path::{CheckPlatforms, FileMode, PathMode, PathSegment};
-
-use std::cmp::Ordering;
-use std::collections::HashSet;
-use std::io::BufRead;
+use crate::{
+    object::{parse_utils, ContentSource, ContentSourceResult},
+    path::{CheckPlatforms, FileMode, PathMode, PathSegment},
+};
 
 use unicode_normalization::UnicodeNormalization;
 

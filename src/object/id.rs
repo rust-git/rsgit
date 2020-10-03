@@ -1,5 +1,7 @@
-use std::fmt::{self, Write};
-use std::str::FromStr;
+use std::{
+    fmt::{self, Write},
+    str::FromStr,
+};
 
 use thiserror::Error;
 
