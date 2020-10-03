@@ -1,31 +1,19 @@
 use std::io::{BufRead, Result};
 
-// TO DO: Remove #[allow(dead_code)] directives when parse_utils is
-// consumed by upstream code.
-// https://github.com/rust-git/rsgit/issues/47
+// Read one line from input source if possible.
+pub(crate) fn read_line<B: BufRead>(b: &mut B) -> Result<Option<Vec<u8>>> {
+    let mut line = Vec::new();
 
-// Read one line from input source.
-//
-// Return `true` if one or more bytes were read.
-// Return `false` if no bytes read (likely EOF).
-#[allow(dead_code)]
-pub(crate) fn read_line(b: &mut dyn BufRead, line: &mut Vec<u8>) -> Result<bool> {
-    line.clear();
-
-    if b.read_until(10, line)? == 0 {
-        return Ok(false);
-    }
-
-    if let Some(last) = line.last() {
-        if last == &10 {
+    if b.read_until(10, &mut line)? > 0 {
+        if let Some(10) = line.last() {
             line.truncate(line.len() - 1);
         }
+        Ok(Some(line))
+    } else {
+        Ok(None)
     }
-
-    Ok(true)
 }
 
-#[allow(dead_code)]
 pub(crate) fn header<'a>(line: &'a [u8], name: &[u8]) -> Option<&'a [u8]> {
     if line.contains(&b' ') {
         let (maybe_name, value) = split_once(line, &b' ');
@@ -39,7 +27,6 @@ pub(crate) fn header<'a>(line: &'a [u8], name: &[u8]) -> Option<&'a [u8]> {
     }
 }
 
-#[allow(dead_code)]
 pub(crate) fn attribution_is_valid(line: &[u8]) -> bool {
     // Note that this parser is intentionally more strict
     // than the one in Attribution::parse.
@@ -106,7 +93,6 @@ fn from_decimal_digit(digit: u8) -> i16 {
     (digit as i16) - 48
 }
 
-#[allow(dead_code)]
 pub(crate) fn object_id_is_valid(name: &[u8]) -> bool {
     if name.len() == 40 {
         name.iter().all(|&c| is_valid_hex_digit(c))
@@ -137,36 +123,30 @@ mod tests {
     use std::io::Cursor;
 
     #[test]
-    fn read_line() {
+    fn read_line_fn() {
         let mut c = Cursor::new(&b"abc\ndef\n");
-        let mut line: Vec<u8> = Vec::new();
 
-        assert_eq!(super::read_line(&mut c, &mut line).unwrap(), true);
+        let line = read_line(&mut c).unwrap().unwrap();
         assert_eq!(line.as_slice(), b"abc");
 
-        assert_eq!(super::read_line(&mut c, &mut line).unwrap(), true);
+        let line = read_line(&mut c).unwrap().unwrap();
         assert_eq!(line.as_slice(), b"def");
 
-        assert_eq!(super::read_line(&mut c, &mut line).unwrap(), false);
-        assert_eq!(line.as_slice(), b"");
+        assert!(read_line(&mut c).unwrap().is_none());
 
         let mut c = Cursor::new(&b"abc\n");
-        let mut line: Vec<u8> = Vec::new();
 
-        assert_eq!(super::read_line(&mut c, &mut line).unwrap(), true);
+        let line = read_line(&mut c).unwrap().unwrap();
         assert_eq!(line.as_slice(), b"abc");
 
-        assert_eq!(super::read_line(&mut c, &mut line).unwrap(), false);
-        assert_eq!(line.as_slice(), b"");
+        assert!(read_line(&mut c).unwrap().is_none());
 
         let mut c = Cursor::new(&b"abc");
-        let mut line: Vec<u8> = Vec::new();
 
-        assert_eq!(super::read_line(&mut c, &mut line).unwrap(), true);
+        let line = read_line(&mut c).unwrap().unwrap();
         assert_eq!(line.as_slice(), b"abc");
 
-        assert_eq!(super::read_line(&mut c, &mut line).unwrap(), false);
-        assert_eq!(line.as_slice(), b"");
+        assert!(read_line(&mut c).unwrap().is_none());
     }
 
     #[test]

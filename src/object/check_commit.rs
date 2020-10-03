@@ -2,27 +2,32 @@ use super::{parse_utils, ContentSource, ContentSourceResult};
 
 pub(crate) fn commit_is_valid(s: &dyn ContentSource) -> ContentSourceResult<bool> {
     let mut r = s.open()?;
-    let mut line = Vec::new();
 
-    parse_utils::read_line(&mut r, &mut line)?;
-    if let Some(tree_id) = parse_utils::header(&line.as_slice(), b"tree") {
-        if !parse_utils::object_id_is_valid(&tree_id) {
+    if let Some(line) = parse_utils::read_line(&mut r)? {
+        if let Some(tree_id) = parse_utils::header(&line.as_slice(), b"tree") {
+            if !parse_utils::object_id_is_valid(&tree_id) {
+                return Ok(false);
+            }
+        } else {
             return Ok(false);
         }
     } else {
         return Ok(false);
     }
 
-    loop {
-        parse_utils::read_line(&mut r, &mut line)?;
-        if let Some(parent_id) = parse_utils::header(&line.as_slice(), b"parent") {
-            if !parse_utils::object_id_is_valid(&parent_id) {
-                return Ok(false);
+    let line = loop {
+        if let Some(line) = parse_utils::read_line(&mut r)? {
+            if let Some(parent_id) = parse_utils::header(&line.as_slice(), b"parent") {
+                if !parse_utils::object_id_is_valid(&parent_id) {
+                    return Ok(false);
+                }
+            } else {
+                break line;
             }
         } else {
-            break;
+            return Ok(false);
         }
-    }
+    };
 
     if let Some(_author) = parse_utils::header(&line.as_slice(), b"author") {
         if !parse_utils::attribution_is_valid(&line) {
@@ -32,9 +37,12 @@ pub(crate) fn commit_is_valid(s: &dyn ContentSource) -> ContentSourceResult<bool
         return Ok(false);
     }
 
-    parse_utils::read_line(&mut r, &mut line)?;
-    if let Some(_committer) = parse_utils::header(&line.as_slice(), b"committer") {
-        if !parse_utils::attribution_is_valid(&line) {
+    if let Some(line) = parse_utils::read_line(&mut r)? {
+        if let Some(_committer) = parse_utils::header(&line.as_slice(), b"committer") {
+            if !parse_utils::attribution_is_valid(&line) {
+                return Ok(false);
+            }
+        } else {
             return Ok(false);
         }
     } else {

@@ -2,34 +2,43 @@ use super::{parse_utils, ContentSource, ContentSourceResult};
 
 pub(crate) fn tag_is_valid(s: &dyn ContentSource) -> ContentSourceResult<bool> {
     let mut r = s.open()?;
-    let mut line = Vec::new();
 
-    parse_utils::read_line(&mut r, &mut line)?;
-    if let Some(object_id) = parse_utils::header(&line.as_slice(), b"object") {
-        if !parse_utils::object_id_is_valid(&object_id) {
+    if let Some(line) = parse_utils::read_line(&mut r)? {
+        if let Some(object_id) = parse_utils::header(&line.as_slice(), b"object") {
+            if !parse_utils::object_id_is_valid(&object_id) {
+                return Ok(false);
+            }
+        } else {
             return Ok(false);
         }
     } else {
         return Ok(false);
     }
 
-    parse_utils::read_line(&mut r, &mut line)?;
-    if parse_utils::header(&line.as_slice(), b"type") == None {
-        return Ok(false);
-    }
-
-    parse_utils::read_line(&mut r, &mut line)?;
-    if parse_utils::header(&line.as_slice(), b"tag") == None {
-        return Ok(false);
-    }
-
-    parse_utils::read_line(&mut r, &mut line)?;
-    if let Some(_tagger) = parse_utils::header(&line.as_slice(), b"tagger") {
-        Ok(parse_utils::attribution_is_valid(&line))
+    if let Some(line) = parse_utils::read_line(&mut r)? {
+        if parse_utils::header(&line.as_slice(), b"type") == None {
+            return Ok(false);
+        }
     } else {
-        Ok(true)
-        // tagger line does not need to be present
+        return Ok(false);
     }
+
+    if let Some(line) = parse_utils::read_line(&mut r)? {
+        if parse_utils::header(&line.as_slice(), b"tag") == None {
+            return Ok(false);
+        }
+    } else {
+        return Ok(false);
+    }
+
+    if let Some(line) = parse_utils::read_line(&mut r)? {
+        if let Some(_tagger) = parse_utils::header(&line.as_slice(), b"tagger") {
+            return Ok(parse_utils::attribution_is_valid(&line));
+        }
+    }
+
+    // `tagger` line does not need to be present.
+    Ok(true)
 }
 
 #[cfg(test)]
