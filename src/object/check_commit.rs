@@ -57,6 +57,18 @@ mod tests {
     use super::*;
 
     #[test]
+    fn invalid_empty() {
+        let cs = "".to_string();
+        assert_eq!(commit_is_valid(&cs).unwrap(), false);
+    }
+
+    #[test]
+    fn invalid_only_tree() {
+        let cs = "tree be9bfa841874ccc9f2ef7c48d0c76226f89b7189\n".to_string();
+        assert_eq!(commit_is_valid(&cs).unwrap(), false);
+    }
+
+    #[test]
     fn valid_no_parent() {
         let cs = "tree be9bfa841874ccc9f2ef7c48d0c76226f89b7189\n\
                   author A. U. Thor <author@localhost> 1 +0000\n\
