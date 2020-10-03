@@ -1,3 +1,5 @@
+#![deny(warnings)]
+
 use std::error::Error;
 
 #[cfg(test)]
