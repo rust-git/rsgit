@@ -2,8 +2,10 @@ use std::io::Write;
 
 use super::super::*;
 
-use crate::object::{Kind, Object};
-use crate::test_support::TempGitRepo;
+use crate::{
+    object::{Kind, Object},
+    test_support::TempGitRepo,
+};
 
 use tempfile::{tempdir, NamedTempFile};
 

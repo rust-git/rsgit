@@ -1,11 +1,12 @@
 #![deny(warnings)]
 
-use std::error::Error;
+use std::{
+    error::Error,
+    io::{Read, Write},
+};
 
 #[cfg(test)]
 use std::ffi::OsString;
-
-use std::io::{Read, Write};
 
 use clap::{crate_version, App, AppSettings, ArgMatches};
 

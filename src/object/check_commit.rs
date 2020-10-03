@@ -1,4 +1,4 @@
-use super::{parse_utils, ContentSource, ContentSourceResult};
+use crate::object::{parse_utils, ContentSource, ContentSourceResult};
 
 pub(crate) fn commit_is_valid(s: &dyn ContentSource) -> ContentSourceResult<bool> {
     let mut r = s.open()?;

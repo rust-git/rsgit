@@ -7,16 +7,17 @@
 //! That said, it does intentionally use the same `.git` folder format as
 //! command-line git so that results may be compared for similar operations.
 
-use std::fs::{self, OpenOptions};
-use std::io::{self, Write};
-use std::path::{Path, PathBuf};
-
-use crate::object::Object;
+use std::{
+    fs::{self, OpenOptions},
+    io::{self, Write},
+    path::{Path, PathBuf},
+};
 
 use super::{Error, Repo, Result};
 
-use flate2::write::ZlibEncoder;
-use flate2::Compression;
+use crate::object::Object;
+
+use flate2::{write::ZlibEncoder, Compression};
 
 /// Implementation of [`Repo`] that stores content on the local file system.
 ///
