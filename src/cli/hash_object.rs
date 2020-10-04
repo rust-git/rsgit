@@ -154,6 +154,7 @@ mod tests {
         let mut cgit = Command::new("git")
             .current_dir(c_path)
             .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
             .args(&["hash-object", "-w", "--stdin"])
             .spawn()
             .unwrap();
@@ -164,7 +165,6 @@ mod tests {
         }
 
         let c_stdout = cgit.wait_with_output().unwrap().stdout;
-
         let r_tgr = TempGitRepo::new();
         let r_path = r_tgr.path();
 
@@ -173,8 +173,6 @@ mod tests {
             Cli::run_with_stdin_and_args(stdin, vec!["hash-object", "-w", "--stdin"]).unwrap();
 
         assert_eq!(c_stdout, r_stdout);
-        // This assetion is failing in a way that suggests we aren't
-        // actually feeding stdin as expected to C git.
 
         assert!(!dir_diff::is_different(c_path, r_path).unwrap());
     }
