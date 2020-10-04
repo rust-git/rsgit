@@ -1,9 +1,9 @@
 //! Represents the git concept of an "object" which is a tuple of
 //! object type and binary data identified by the hash of the binary data.
 
-use sha1::{Digest, Sha1};
-
 use crate::path::CheckPlatforms;
+
+use sha1::{Digest, Sha1};
 
 mod attribution;
 pub use attribution::Attribution;
@@ -147,11 +147,9 @@ fn assign_id(kind: Kind, content_source: &dyn ContentSource) -> ContentSourceRes
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use std::{fs::File, io::Write, process::Command};
 
-    use std::fs::File;
-    use std::io::Write;
-    use std::process::Command;
+    use super::*;
 
     use tempfile::TempDir;
 

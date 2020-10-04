@@ -1,7 +1,4 @@
-use std::env::set_current_dir;
-use std::ffi::OsStr;
-use std::fs;
-use std::path::Path;
+use std::{env::set_current_dir, ffi::OsStr, fs, path::Path};
 
 use assert_cmd::cargo;
 

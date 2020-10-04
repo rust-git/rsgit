@@ -1,8 +1,10 @@
-use std::fmt;
-use std::str::{self, FromStr};
-use std::string::String;
+use std::{
+    fmt,
+    str::{self, FromStr},
+    string::String,
+};
 
-use super::parse_utils::split_once;
+use crate::object::parse_utils::split_once;
 
 /// An `Attribution` combines a person's identity (name and e-mail address)
 /// with the timestamp for a particular action.

@@ -1,7 +1,9 @@
-use std::ffi::OsStr;
-use std::fs;
-use std::path::{Path, PathBuf};
-use std::process::Command;
+use std::{
+    ffi::OsStr,
+    fs,
+    path::{Path, PathBuf},
+    process::Command,
+};
 
 // A TempGitRepo creates a temporary, empty repo using
 // the command-line git from the host system. This is often

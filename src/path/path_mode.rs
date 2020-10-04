@@ -1,6 +1,6 @@
 use std::cmp::{self, Ordering};
 
-use super::FileMode;
+use crate::path::FileMode;
 
 /// Represents the tuple of git path (an uninterpreted sequence of bytes,
 /// not necessarily UTF-8) and git file mode. Used for sorting trees of objects.

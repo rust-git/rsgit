@@ -1,9 +1,11 @@
-use std::convert::AsRef;
-use std::fs::{self, File};
-use std::io::{self, BufReader, Error, ErrorKind};
-use std::path::{Path, PathBuf};
+use std::{
+    convert::AsRef,
+    fs::{self, File},
+    io::{self, BufReader, Error, ErrorKind},
+    path::{Path, PathBuf},
+};
 
-use super::{ContentSource, ContentSourceOpenResult};
+use crate::object::{ContentSource, ContentSourceOpenResult};
 
 /// Implements [`ContentSource`] to read content from a file on disk.
 ///
@@ -42,9 +44,9 @@ impl ContentSource for FileContentSource {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
     use std::io::{ErrorKind, Write};
+
+    use super::*;
 
     use tempfile::TempDir;
 
