@@ -179,6 +179,28 @@ mod tests {
         assert!(!dir_diff::is_different(c_path, r_path).unwrap());
     }
 
+    #[test]
+    fn err_corrupt_commit() {
+        let stdin: Vec<u8> = b"test content\n".to_vec();
+
+        let c_tgr = TempGitRepo::new();
+        let c_path = c_tgr.path();
+
+        let r_tgr = TempGitRepo::new();
+        let r_path = r_tgr.path();
+
+        let _r_cwd = TempCwd::new(r_path);
+        let r_err = Cli::run_with_stdin_and_args(
+            stdin,
+            vec!["hash-object", "-t", "commit", "-w", "--stdin"],
+        )
+        .unwrap_err();
+
+        assert_eq!(r_err.to_string(), "corrupt commit\n");
+
+        assert!(!dir_diff::is_different(c_path, r_path).unwrap());
+    }
+
     //     #[test]
     //     fn error_no_dir() {
     //         let err = Cli::run_with_args(vec!["init"]).unwrap_err();
