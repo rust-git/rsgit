@@ -2,10 +2,12 @@ use std::io::Write;
 
 use super::{find_repo, Cli, Result};
 
-use rsgit::object::{ContentSource, FileContentSource, Kind, Object, ReadContentSource};
-use rsgit::repo::Repo;
-
 use clap::{App, Arg, ArgMatches, Error, ErrorKind, SubCommand};
+
+use rsgit::{
+    object::{ContentSource, FileContentSource, Kind, Object, ReadContentSource},
+    repo::Repo,
+};
 
 pub(crate) fn subcommand<'a, 'b>() -> App<'a, 'b> {
     SubCommand::with_name("hash-object")
