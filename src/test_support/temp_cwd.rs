@@ -8,12 +8,14 @@ use std::{
 //
 // When the struct goes out of scope, the current working
 // directory will be reset to its previous value.
-
+//
 // Because this struct is intended for testing, its functions
 // panic instead of returning Result structs.
-
+//
 // We override the dead_code warnings here because this
 // struct is only used in test code.
+//
+// Any test that uses this module should be marked #[serial].
 #[allow(dead_code)]
 pub(crate) struct TempCwd {
     old_path: PathBuf,

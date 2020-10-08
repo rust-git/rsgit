@@ -107,6 +107,7 @@ mod tests {
     use crate::cli::Cli;
     use crate::test_support::{TempCwd, TempGitRepo};
 
+    use serial_test::serial;
     use tempfile::TempDir;
 
     #[test]
@@ -147,6 +148,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn matches_command_line_git() {
         let stdin: Vec<u8> = b"test content\n".to_vec();
 
@@ -180,6 +182,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn err_corrupt_commit() {
         let stdin: Vec<u8> = b"test content\n".to_vec();
 
@@ -202,6 +205,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn err_corrupt_tree() {
         let stdin: Vec<u8> = b"test content\n".to_vec();
 
@@ -222,6 +226,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn err_corrupt_tag() {
         let stdin: Vec<u8> = b"test content\n".to_vec();
 
