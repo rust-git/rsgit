@@ -262,36 +262,78 @@ mod tests {
         let r_path = r_tgr.path();
 
         let _r_cwd = TempCwd::new(r_path);
-        let r_err =
-            Cli::run_with_stdin_and_args(stdin, vec!["hash-object", "-t", "bogus", "-w", "--stdin"])
-                .unwrap_err();
+        let r_err = Cli::run_with_stdin_and_args(
+            stdin,
+            vec!["hash-object", "-t", "bogus", "-w", "--stdin"],
+        )
+        .unwrap_err();
 
-        assert_eq!(r_err.to_string(), "-t must be one of blob, commit, tag, or tree\n");
+        assert_eq!(
+            r_err.to_string(),
+            "-t must be one of blob, commit, tag, or tree\n"
+        );
 
         assert!(!dir_diff::is_different(c_path, r_path).unwrap());
     }
 
-    //     #[test]
-    //     fn error_no_dir() {
-    //         let err = Cli::run_with_args(vec!["init"]).unwrap_err();
+    #[test]
+    #[serial]
+    fn err_no_input() {
+        let stdin: Vec<u8> = b"test content\n".to_vec();
 
-    //         let errmsg = err.to_string();
-    //         assert!(
-    //             errmsg.contains("required arguments were not provided"),
-    //             "\nincorrect error message:\n\n{}",
-    //             errmsg
-    //         );
-    //     }
+        let c_tgr = TempGitRepo::new();
+        let c_path = c_tgr.path();
 
-    //     #[test]
-    //     fn error_too_many_args() {
-    //         let err = Cli::run_with_args(vec!["init", "here", "and there"]).unwrap_err();
+        let r_tgr = TempGitRepo::new();
+        let r_path = r_tgr.path();
 
-    //         let errmsg = err.to_string();
-    //         assert!(
-    //             errmsg.contains("wasn't expected"),
-    //             "\nincorrect error message:\n\n{}",
-    //             errmsg
-    //         );
-    //     }
+        let _r_cwd = TempCwd::new(r_path);
+        let r_err = Cli::run_with_stdin_and_args(stdin, vec!["hash-object", "-t", "blob", "-w"])
+            .unwrap_err();
+
+        assert_eq!(
+            r_err.to_string(),
+            "content source must be either --stdin or a file path\n"
+        );
+
+        assert!(!dir_diff::is_different(c_path, r_path).unwrap());
+    }
+
+    #[test]
+    #[serial]
+    fn err_two_inputs() {
+        let dir = TempDir::new().unwrap();
+        let path = dir.as_ref().join("example");
+
+        {
+            let mut f = File::create(&path).unwrap();
+            for _ in 0..1000 {
+                f.write_all(b"foobar").unwrap();
+            }
+        }
+
+        let path_str = path.to_str().unwrap();
+
+        let stdin: Vec<u8> = b"test content\n".to_vec();
+
+        let c_tgr = TempGitRepo::new();
+        let c_path = c_tgr.path();
+
+        let r_tgr = TempGitRepo::new();
+        let r_path = r_tgr.path();
+
+        let _r_cwd = TempCwd::new(r_path);
+        let r_err = Cli::run_with_stdin_and_args(
+            stdin,
+            vec!["hash-object", "-t", "blob", "-w", "--stdin", path_str],
+        )
+        .unwrap_err();
+
+        assert_eq!(
+            r_err.to_string(),
+            "content source must be either --stdin or a file path\n"
+        );
+
+        assert!(!dir_diff::is_different(c_path, r_path).unwrap());
+    }
 }
