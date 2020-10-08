@@ -201,6 +201,46 @@ mod tests {
         assert!(!dir_diff::is_different(c_path, r_path).unwrap());
     }
 
+    #[test]
+    fn err_corrupt_tree() {
+        let stdin: Vec<u8> = b"test content\n".to_vec();
+
+        let c_tgr = TempGitRepo::new();
+        let c_path = c_tgr.path();
+
+        let r_tgr = TempGitRepo::new();
+        let r_path = r_tgr.path();
+
+        let _r_cwd = TempCwd::new(r_path);
+        let r_err =
+            Cli::run_with_stdin_and_args(stdin, vec!["hash-object", "-t", "tree", "-w", "--stdin"])
+                .unwrap_err();
+
+        assert_eq!(r_err.to_string(), "corrupt tree\n");
+
+        assert!(!dir_diff::is_different(c_path, r_path).unwrap());
+    }
+
+    #[test]
+    fn err_corrupt_tag() {
+        let stdin: Vec<u8> = b"test content\n".to_vec();
+
+        let c_tgr = TempGitRepo::new();
+        let c_path = c_tgr.path();
+
+        let r_tgr = TempGitRepo::new();
+        let r_path = r_tgr.path();
+
+        let _r_cwd = TempCwd::new(r_path);
+        let r_err =
+            Cli::run_with_stdin_and_args(stdin, vec!["hash-object", "-t", "tag", "-w", "--stdin"])
+                .unwrap_err();
+
+        assert_eq!(r_err.to_string(), "corrupt tag\n");
+
+        assert!(!dir_diff::is_different(c_path, r_path).unwrap());
+    }
+
     //     #[test]
     //     fn error_no_dir() {
     //         let err = Cli::run_with_args(vec!["init"]).unwrap_err();
