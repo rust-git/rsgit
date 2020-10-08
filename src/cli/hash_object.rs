@@ -100,12 +100,16 @@ fn content_source_from_args(cli: &mut Cli, args: &ArgMatches) -> Result<Box<dyn 
 
 #[cfg(test)]
 mod tests {
-    use std::fs::File;
-    use std::io::Write;
-    use std::process::{Command, Stdio};
+    use std::{
+        fs::File,
+        io::Write,
+        process::{Command, Stdio},
+    };
 
-    use crate::cli::Cli;
-    use crate::test_support::{TempCwd, TempGitRepo};
+    use crate::{
+        cli::Cli,
+        test_support::{TempCwd, TempGitRepo},
+    };
 
     use serial_test::serial;
     use tempfile::TempDir;
