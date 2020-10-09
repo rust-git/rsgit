@@ -1,9 +1,11 @@
-use std::{env::set_current_dir, ffi::OsStr, fs, path::Path};
+use std::{env::set_current_dir, ffi::OsStr, fs, path::Path, process::Command};
 
 use assert_cmd::cargo;
 
 type GitOp = fn(&OsStr, &Path);
 
+// Using #[allow(dead_code)] throughout this mod because
+// it is only referenced via other test scripts.
 #[allow(dead_code)]
 pub fn compare_git_and_rsgit(op: GitOp) {
     let c_temp = tempfile::tempdir().unwrap();
@@ -63,6 +65,16 @@ pub fn compare_git_and_rsgit_in(op: GitOp, path: &str) {
             r_dir.display()
         );
     }
+}
+
+#[allow(dead_code)]
+pub fn init_empty_repo(path: &Path) {
+    Command::new("git")
+        .args(&["init", path.to_str().unwrap()])
+        .output()
+        .unwrap();
+
+    sanitize_repo(path);
 }
 
 pub fn sanitize_repo(path: &Path) {
