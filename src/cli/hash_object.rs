@@ -60,7 +60,7 @@ pub(crate) fn run(cli: &mut Cli, args: &ArgMatches) -> Result<()> {
 fn object_from_args(cli: &mut Cli, args: &ArgMatches) -> Result<Object> {
     let kind = type_from_args(&args)?;
     let content_source = content_source_from_args(cli, &args)?;
-    let object = Object::new(kind, content_source)?;
+    let object = Object::new(&kind, content_source)?;
     Ok(object)
 }
 
