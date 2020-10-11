@@ -32,7 +32,7 @@ fn matches_command_line_git() {
     let r_path = rsgit_temp.path();
     let mut r = OnDisk::init(r_path).unwrap();
 
-    let o = Object::new(Kind::Blob, Box::new(TEST_CONTENT.to_vec())).unwrap();
+    let o = Object::new(&Kind::Blob, Box::new(TEST_CONTENT.to_vec())).unwrap();
     r.put_loose_object(&o).unwrap();
 
     assert!(!dir_diff::is_different(tgr.path(), r_path).unwrap());
@@ -59,7 +59,7 @@ fn matches_command_line_git_large_file() {
     let r_path = rsgit_temp.path();
     let mut r = OnDisk::init(r_path).unwrap();
 
-    let o = Object::new(Kind::Blob, Box::new(test_content.to_vec())).unwrap();
+    let o = Object::new(&Kind::Blob, Box::new(test_content.to_vec())).unwrap();
     assert_eq!(object_id, o.id().to_string());
     r.put_loose_object(&o).unwrap();
 
@@ -75,7 +75,7 @@ fn error_cant_create_objects_dir() {
     let objects_dir = r_path.join(".git/objects/d6");
     fs::write(&objects_dir, "sand in the gears").unwrap();
 
-    let o = Object::new(Kind::Blob, Box::new(TEST_CONTENT.to_vec())).unwrap();
+    let o = Object::new(&Kind::Blob, Box::new(TEST_CONTENT.to_vec())).unwrap();
     let err = r.put_loose_object(&o).unwrap_err();
 
     match err {
@@ -96,7 +96,7 @@ fn error_object_exists() {
     object_path.push("70460b4b4aece5915caf5c68d12f560a9fe3e4");
     fs::write(&object_path, "sand in the gears").unwrap();
 
-    let o = Object::new(Kind::Blob, Box::new(TEST_CONTENT.to_vec())).unwrap();
+    let o = Object::new(&Kind::Blob, Box::new(TEST_CONTENT.to_vec())).unwrap();
     let err = r.put_loose_object(&o).unwrap_err();
 
     match err {
