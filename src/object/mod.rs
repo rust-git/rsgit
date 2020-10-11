@@ -44,10 +44,10 @@ impl Object {
     ///
     /// Calculates the object's ID.
     #[cfg(not(tarpaulin_include))]
-    pub fn new(kind: Kind, content_source: Box<dyn ContentSource>) -> ContentSourceResult<Object> {
+    pub fn new(kind: &Kind, content_source: Box<dyn ContentSource>) -> ContentSourceResult<Object> {
         Ok(Object {
             id: assign_id(kind, content_source.as_ref())?,
-            kind,
+            kind: kind.clone(),
             content_source,
         })
     }
@@ -61,8 +61,8 @@ impl Object {
     }
 
     /// Return the kind of the object.
-    pub fn kind(&self) -> Kind {
-        self.kind
+    pub fn kind(&self) -> &Kind {
+        &self.kind
     }
 
     /// Return the size (in bytes) of the object.
@@ -90,6 +90,7 @@ impl Object {
             Kind::Commit => check_commit::commit_is_valid(self.content_source.as_ref()),
             Kind::Tag => check_tag::tag_is_valid(self.content_source.as_ref()),
             Kind::Tree => check_tree::tree_is_valid(self.content_source.as_ref()),
+            Kind::Other(_) => Ok(false),
         }
     }
 
@@ -110,11 +111,12 @@ impl Object {
                 self.content_source.as_ref(),
                 platforms,
             ),
+            Kind::Other(_) => Ok(false),
         }
     }
 }
 
-fn assign_id(kind: Kind, content_source: &dyn ContentSource) -> ContentSourceResult<Id> {
+fn assign_id(kind: &Kind, content_source: &dyn ContentSource) -> ContentSourceResult<Id> {
     let mut hasher = Sha1::new();
 
     hasher.update(kind.to_string());
@@ -156,13 +158,13 @@ mod tests {
     #[test]
     fn empty_vec() {
         let v = vec![];
-        let o = Object::new(Kind::Blob, Box::new(v)).unwrap();
+        let o = Object::new(&Kind::Blob, Box::new(v)).unwrap();
 
         assert_eq!(
             o.id().to_string(),
             "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391"
         );
-        assert_eq!(o.kind(), Kind::Blob);
+        assert_eq!(o.kind(), &Kind::Blob);
         assert_eq!(o.kind().to_string(), "blob");
         assert_eq!(o.len(), 0);
         assert!(o.is_empty());
@@ -182,13 +184,13 @@ mod tests {
     #[test]
     fn vec_with_content() {
         let v = vec![2, 3, 45, 67];
-        let o = Object::new(Kind::Blob, Box::new(v)).unwrap();
+        let o = Object::new(&Kind::Blob, Box::new(v)).unwrap();
 
         assert_eq!(
             o.id().to_string(),
             "87cffd12aa440e20847f516da27af986eacda0b9"
         );
-        assert_eq!(o.kind(), Kind::Blob);
+        assert_eq!(o.kind(), &Kind::Blob);
         assert_eq!(o.len(), 4);
         assert!(!o.is_empty());
 
@@ -214,13 +216,13 @@ mod tests {
     #[test]
     fn empty_str() {
         let s = "".to_string();
-        let o = Object::new(Kind::Blob, Box::new(s)).unwrap();
+        let o = Object::new(&Kind::Blob, Box::new(s)).unwrap();
 
         assert_eq!(
             o.id().to_string(),
             "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391"
         );
-        assert_eq!(o.kind(), Kind::Blob);
+        assert_eq!(o.kind(), &Kind::Blob);
         assert_eq!(o.len(), 0);
         assert!(o.is_empty());
 
@@ -239,13 +241,13 @@ mod tests {
     #[test]
     fn str_with_content() {
         let s = "ABCD".to_string();
-        let o = Object::new(Kind::Blob, Box::new(s)).unwrap();
+        let o = Object::new(&Kind::Blob, Box::new(s)).unwrap();
 
         assert_eq!(
             o.id().to_string(),
             "a6bddc4a144046eddf2296a9a4c23d8fae600b15"
         );
-        assert_eq!(o.kind(), Kind::Blob);
+        assert_eq!(o.kind(), &Kind::Blob);
         assert_eq!(o.len(), 4);
         assert!(!o.is_empty());
 
@@ -269,11 +271,46 @@ mod tests {
     }
 
     #[test]
+    fn arbitrary_type() {
+        // $ echo 'ABCD' | git hash-object --literally -t mumble --stdin
+        // d670460b4b4aece5915caf5c68d12f560a9fe3e4
+
+        let s = "ABCD\n".to_string();
+        let o = Object::new(&Kind::Other(b"mumble".to_vec()), Box::new(s)).unwrap();
+
+        assert_eq!(
+            o.id().to_string(),
+            "8bd53231038065eb29576b3a047aec51f505eda0"
+        );
+        assert_eq!(o.kind(), &Kind::Other(b"mumble".to_vec()));
+        assert_eq!(o.len(), 5);
+        assert!(!o.is_empty());
+
+        let mut buf = [0; 3];
+        let mut f = o.open().unwrap();
+
+        let r = f.read(&mut buf);
+        assert!(r.is_ok());
+        assert_eq!(r.unwrap(), 3);
+        assert_eq!(buf, [65, 66, 67]);
+
+        let r = f.read(&mut buf);
+        assert!(r.is_ok());
+        assert_eq!(r.unwrap(), 2);
+        assert_eq!(buf, [68, 10, 67]);
+
+        let r = f.read(&mut buf);
+        assert!(r.is_ok());
+        assert_eq!(r.unwrap(), 0);
+        assert_eq!(buf, [68, 10, 67]);
+    }
+
+    #[test]
     fn id_matches_git_hash_object() {
         // $ echo 'test content' | git hash-object --stdin
         // d670460b4b4aece5915caf5c68d12f560a9fe3e4
 
-        let o = Object::new(Kind::Blob, Box::new("test content\n".to_string())).unwrap();
+        let o = Object::new(&Kind::Blob, Box::new("test content\n".to_string())).unwrap();
         assert_eq!(
             o.id().to_string(),
             "d670460b4b4aece5915caf5c68d12f560a9fe3e4"
@@ -303,7 +340,7 @@ mod tests {
         let fcs = FileContentSource::new(&path).unwrap();
         assert_eq!(fcs.len(), 6000);
 
-        let o = Object::new(Kind::Blob, Box::new(fcs)).unwrap();
+        let o = Object::new(&Kind::Blob, Box::new(fcs)).unwrap();
         assert_eq!(o.id().to_string(), expected_id);
     }
 
@@ -311,7 +348,7 @@ mod tests {
     fn check_blob_valid() {
         let cs = "no such thing as an invalid blob".to_string();
 
-        let o = Object::new(Kind::Blob, Box::new(cs)).unwrap();
+        let o = Object::new(&Kind::Blob, Box::new(cs)).unwrap();
         assert_eq!(o.is_valid().unwrap(), true);
     }
 
@@ -322,7 +359,7 @@ mod tests {
                   committer A. U. Thor <author@localhost> 1 +0000\n"
             .to_string();
 
-        let o = Object::new(Kind::Commit, Box::new(cs)).unwrap();
+        let o = Object::new(&Kind::Commit, Box::new(cs)).unwrap();
         assert_eq!(o.is_valid().unwrap(), true);
     }
 
@@ -333,7 +370,7 @@ mod tests {
                 committer <> 0 +0000\n"
             .to_string();
 
-        let o = Object::new(Kind::Commit, Box::new(cs)).unwrap();
+        let o = Object::new(&Kind::Commit, Box::new(cs)).unwrap();
         assert_eq!(o.is_valid().unwrap(), true);
     }
 
@@ -344,7 +381,7 @@ mod tests {
                   committer b <b@c> <b@c> 0 +0000\n"
             .to_string();
 
-        let o = Object::new(Kind::Commit, Box::new(cs)).unwrap();
+        let o = Object::new(&Kind::Commit, Box::new(cs)).unwrap();
         assert_eq!(o.is_valid().unwrap(), false);
     }
 
@@ -356,7 +393,7 @@ mod tests {
                   tagger A. U. Thor <tagger@localhost> 1 +0000\n"
             .to_string();
 
-        let o = Object::new(Kind::Tag, Box::new(cs)).unwrap();
+        let o = Object::new(&Kind::Tag, Box::new(cs)).unwrap();
         assert_eq!(o.is_valid().unwrap(), true);
     }
 
@@ -364,7 +401,7 @@ mod tests {
     fn check_tag_invalid_object() {
         let cs = "object\tbe9bfa841874ccc9f2ef7c48d0c76226f89b7189\n".to_string();
 
-        let o = Object::new(Kind::Tag, Box::new(cs)).unwrap();
+        let o = Object::new(&Kind::Tag, Box::new(cs)).unwrap();
         assert_eq!(o.is_valid().unwrap(), false);
     }
 
@@ -389,7 +426,7 @@ mod tests {
     fn check_tree_valid_tree_one_entry() {
         let cs = entry("100644 regular-file");
 
-        let o = Object::new(Kind::Tree, Box::new(cs)).unwrap();
+        let o = Object::new(&Kind::Tree, Box::new(cs)).unwrap();
         assert_eq!(o.is_valid().unwrap(), true);
     }
 
@@ -400,7 +437,7 @@ mod tests {
             "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0",
         );
 
-        let o = Object::new(Kind::Tree, Box::new(cs)).unwrap();
+        let o = Object::new(&Kind::Tree, Box::new(cs)).unwrap();
         assert_eq!(o.is_valid().unwrap(), false);
     }
 
@@ -408,7 +445,7 @@ mod tests {
     fn platform_check_blob_valid() {
         let cs = "no such thing as an invalid blob".to_string();
 
-        let o = Object::new(Kind::Blob, Box::new(cs)).unwrap();
+        let o = Object::new(&Kind::Blob, Box::new(cs)).unwrap();
         assert_eq!(
             o.is_valid_with_platform_checks(&CheckPlatforms {
                 windows: false,
@@ -426,7 +463,7 @@ mod tests {
                   committer A. U. Thor <author@localhost> 1 +0000\n"
             .to_string();
 
-        let o = Object::new(Kind::Commit, Box::new(cs)).unwrap();
+        let o = Object::new(&Kind::Commit, Box::new(cs)).unwrap();
         assert_eq!(
             o.is_valid_with_platform_checks(&CheckPlatforms {
                 windows: false,
@@ -444,7 +481,7 @@ mod tests {
                 committer <> 0 +0000\n"
             .to_string();
 
-        let o = Object::new(Kind::Commit, Box::new(cs)).unwrap();
+        let o = Object::new(&Kind::Commit, Box::new(cs)).unwrap();
         assert_eq!(
             o.is_valid_with_platform_checks(&CheckPlatforms {
                 windows: false,
@@ -462,7 +499,7 @@ mod tests {
                   committer b <b@c> <b@c> 0 +0000\n"
             .to_string();
 
-        let o = Object::new(Kind::Commit, Box::new(cs)).unwrap();
+        let o = Object::new(&Kind::Commit, Box::new(cs)).unwrap();
         assert_eq!(
             o.is_valid_with_platform_checks(&CheckPlatforms {
                 windows: false,
@@ -481,7 +518,7 @@ mod tests {
                   tagger A. U. Thor <tagger@localhost> 1 +0000\n"
             .to_string();
 
-        let o = Object::new(Kind::Tag, Box::new(cs)).unwrap();
+        let o = Object::new(&Kind::Tag, Box::new(cs)).unwrap();
         assert_eq!(
             o.is_valid_with_platform_checks(&CheckPlatforms {
                 windows: false,
@@ -496,7 +533,7 @@ mod tests {
     fn platform_check_tag_invalid_object() {
         let cs = "object\tbe9bfa841874ccc9f2ef7c48d0c76226f89b7189\n".to_string();
 
-        let o = Object::new(Kind::Tag, Box::new(cs)).unwrap();
+        let o = Object::new(&Kind::Tag, Box::new(cs)).unwrap();
         assert_eq!(
             o.is_valid_with_platform_checks(&CheckPlatforms {
                 windows: false,
@@ -511,7 +548,7 @@ mod tests {
     fn platform_check_tree_valid_tree_one_entry() {
         let cs = entry("100644 regular-file");
 
-        let o = Object::new(Kind::Tree, Box::new(cs)).unwrap();
+        let o = Object::new(&Kind::Tree, Box::new(cs)).unwrap();
         assert_eq!(
             o.is_valid_with_platform_checks(&CheckPlatforms {
                 windows: false,
@@ -529,7 +566,7 @@ mod tests {
             "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0",
         );
 
-        let o = Object::new(Kind::Tree, Box::new(cs)).unwrap();
+        let o = Object::new(&Kind::Tree, Box::new(cs)).unwrap();
         assert_eq!(
             o.is_valid_with_platform_checks(&CheckPlatforms {
                 windows: false,
@@ -544,7 +581,7 @@ mod tests {
     fn platform_check_tree_windows_dot_at_end_of_name() {
         let cs = entry(&"100644 test.".to_string());
 
-        let o = Object::new(Kind::Tree, Box::new(cs)).unwrap();
+        let o = Object::new(&Kind::Tree, Box::new(cs)).unwrap();
         assert_eq!(
             o.is_valid_with_platform_checks(&CheckPlatforms {
                 windows: true,
