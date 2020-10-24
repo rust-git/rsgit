@@ -81,10 +81,7 @@ pub(crate) fn attribution_is_valid(line: &[u8]) -> bool {
 }
 
 fn is_valid_decimal_digit(c: u8) -> bool {
-    match c {
-        b'0'..=b'9' => true,
-        _ => false,
-    }
+    matches!(c, b'0'..=b'9')
 }
 
 fn from_decimal_digit(digit: u8) -> i16 {
