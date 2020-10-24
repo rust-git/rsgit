@@ -71,11 +71,17 @@ fn type_from_args(args: &ArgMatches) -> Result<Kind> {
             "commit" => Ok(Kind::Commit),
             "tag" => Ok(Kind::Tag),
             "tree" => Ok(Kind::Tree),
-            _ => Err(Box::new(Error {
-                message: "-t must be one of blob, commit, tag, or tree".to_string(),
-                kind: ErrorKind::InvalidValue,
-                info: None,
-            })),
+            other => {
+                if args.is_present("literally") {
+                    Ok(Kind::Other(other.as_bytes().to_owned()))
+                } else {
+                    Err(Box::new(Error {
+                        message: "-t must be one of blob, commit, tag, or tree".to_string(),
+                        kind: ErrorKind::InvalidValue,
+                        info: None,
+                    }))
+                }
+            }
         },
         None => Ok(Kind::Blob),
     }
