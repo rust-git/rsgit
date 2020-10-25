@@ -16,7 +16,6 @@ use rsgit_on_disk::OnDiskRepo;
 //
 // Returns a `Result` with `rsgit_core::repo::OnDiskRepo` or
 // `rsgit_core::repo::Error` if no such repo exists.
-#[allow(dead_code)] // TEMPORARY: Until other code actually uses this.
 pub fn from_path<P: AsRef<Path>>(path: P) -> Result<OnDiskRepo> {
     // TO DO: Look in other places for repo.
     // https://github.com/rust-git/rsgit/issues/80
@@ -36,7 +35,6 @@ pub fn from_path<P: AsRef<Path>>(path: P) -> Result<OnDiskRepo> {
 //
 // Returns a `Result` with `rsgit_core::repo::OnDiskRepo` or
 // `rsgit_core::repo::Error` if no such repo exists.
-#[allow(dead_code)] // TEMPORARY: Until other code actually uses this.
 #[cfg(not(tarpaulin_include))]
 pub fn from_current_dir() -> Result<OnDiskRepo> {
     // This function is excluded from code coverage because we can't

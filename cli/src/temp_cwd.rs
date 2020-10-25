@@ -16,7 +16,6 @@ use std::{
 // struct is only used in test code.
 //
 // Any test that uses this module should be marked #[serial].
-#[allow(dead_code)]
 pub(crate) struct TempCwd {
     old_path: PathBuf,
 }
