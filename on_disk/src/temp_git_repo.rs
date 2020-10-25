@@ -5,18 +5,14 @@ use std::{
     process::Command,
 };
 
-// A TempGitRepo creates a temporary, empty repo using
-// the command-line git from the host system. This is often
-// used in unit tests to compare output with comparable
-// rsgit operations.
-
-// Because this struct is intended for testing, its functions
-// panic instead of returning Result structs.
-
-// We override the dead_code warnings here because this
-// struct is only used in test code.
-#[allow(dead_code)]
-pub(crate) struct TempGitRepo {
+/// A `TempGitRepo` creates a temporary, empty repo using
+/// the command-line git from the host system. This is often
+/// used in unit tests to compare output with comparable
+/// rsgit operations.
+///
+/// Because this struct is intended for testing, its functions
+/// panic instead of returning Result structs.
+pub struct TempGitRepo {
     #[allow(dead_code)] // tempdir is only used for RAII
     tempdir: Option<tempfile::TempDir>,
     path: PathBuf,
@@ -25,7 +21,6 @@ pub(crate) struct TempGitRepo {
 impl TempGitRepo {
     // Create a new, sanitized repo in a temporary directory.
     // This directory will be deleted when the struct is dropped.
-    #[allow(dead_code)]
     pub fn new() -> TempGitRepo {
         let tempdir = tempfile::tempdir().unwrap();
         let path: PathBuf = tempdir.path().to_path_buf();
@@ -43,7 +38,6 @@ impl TempGitRepo {
     // WARNING: This will erase any content already at that path.
     // Use this only when you need to manually inspect the results
     // of the test run.
-    #[allow(dead_code)]
     pub fn new_at_path<P: Into<PathBuf>>(p: P) -> TempGitRepo {
         let path = p.into();
         fs::remove_dir_all(&path).unwrap_or(());
@@ -89,7 +83,6 @@ impl TempGitRepo {
     }
 
     // Return the path for this repo's root (working directory).
-    #[allow(dead_code)]
     pub fn path(&self) -> &Path {
         self.path.as_path()
     }

@@ -14,9 +14,6 @@ use crate::object::Object;
 mod error;
 pub use error::{Error, Result};
 
-mod on_disk;
-pub use on_disk::OnDisk;
-
 /// A struct that implements the `Repo` trait represents a particular mechanism
 /// for storing and accessing a git repo.
 ///

@@ -2,7 +2,7 @@ use std::fs;
 
 use super::super::*;
 
-use crate::test_support::TempGitRepo;
+use crate::TempGitRepo;
 
 #[test]
 fn happy_path() {

@@ -13,11 +13,15 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use super::{Error, Repo, Result};
-
-use crate::object::Object;
-
 use flate2::{write::ZlibEncoder, Compression};
+
+use rsgit_core::{
+    object::Object,
+    repo::{Error, Repo, Result},
+};
+
+mod temp_git_repo;
+pub use temp_git_repo::TempGitRepo;
 
 /// Implementation of [`Repo`] that stores content on the local file system.
 ///

@@ -1,6 +1,7 @@
 use std::{env, path::Path};
 
-use rsgit::repo::{OnDisk, Result};
+use rsgit_core::repo::Result;
+use rsgit_on_disk::OnDisk;
 
 // Discover a git repo starting from the given path.
 //
@@ -49,9 +50,9 @@ pub fn from_current_dir() -> Result<OnDisk> {
 mod tests {
     use super::*;
 
-    use crate::test_support::TempGitRepo;
+    use rsgit_core::repo::Error;
 
-    use rsgit::repo::Error;
+    use rsgit_on_disk::TempGitRepo;
 
     #[test]
     fn simple_case() {

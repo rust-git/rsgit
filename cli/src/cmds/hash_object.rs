@@ -4,7 +4,7 @@ use super::{find_repo, Cli, Result};
 
 use clap::{App, Arg, ArgMatches, Error, ErrorKind, SubCommand};
 
-use rsgit::{
+use rsgit_core::{
     object::{ContentSource, FileContentSource, Kind, Object, ReadContentSource},
     repo::Repo,
 };
@@ -112,11 +112,9 @@ mod tests {
         process::{Command, Stdio},
     };
 
-    use crate::{
-        cli::Cli,
-        test_support::{TempCwd, TempGitRepo},
-    };
+    use crate::{cmds::Cli, temp_cwd::TempCwd};
 
+    use rsgit_on_disk::TempGitRepo;
     use serial_test::serial;
     use tempfile::TempDir;
 

@@ -1,9 +1,7 @@
 use std::io::{self, Write};
 
-mod cli;
-
-#[cfg(test)]
-pub(crate) mod test_support;
+mod cmds;
+mod temp_cwd;
 
 #[allow(unused_must_use)]
 #[cfg(not(tarpaulin_include))]
@@ -18,8 +16,8 @@ fn main() {
     let stdout = io::stdout();
     let mut stdout = stdout.lock();
 
-    let mut cli = cli::Cli {
-        arg_matches: cli::app().get_matches(),
+    let mut cli = cmds::Cli {
+        arg_matches: cmds::app().get_matches(),
         stdin: &mut stdin,
         stdout: &mut stdout,
     };
