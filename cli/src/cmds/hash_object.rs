@@ -1,6 +1,6 @@
 use std::io::Write;
 
-use super::{find_repo, Cli, Result};
+use crate::{cmds::Cli, find_repo, Result};
 
 use clap::{App, Arg, ArgMatches, Error, ErrorKind, SubCommand};
 

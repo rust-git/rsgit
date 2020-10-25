@@ -33,7 +33,7 @@ pub fn from_path<P: AsRef<Path>>(path: P) -> Result<OnDiskRepo> {
 // where there is a `.git` directory nested within the
 // given path.
 //
-// Returns a `Result` with `rsgit_core::repo::OnDiskRepo` or
+// Returns a `Result` with `rsgit_on_disk::OnDiskRepo` or
 // `rsgit_core::repo::Error` if no such repo exists.
 #[cfg(not(tarpaulin_include))]
 pub fn from_current_dir() -> Result<OnDiskRepo> {

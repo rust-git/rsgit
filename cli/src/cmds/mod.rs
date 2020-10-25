@@ -1,16 +1,14 @@
 #![deny(warnings)]
 
-use std::{
-    error::Error,
-    io::{Read, Write},
-};
+use std::io::{Read, Write};
 
 #[cfg(test)]
 use std::ffi::OsString;
 
+use crate::Result;
+
 use clap::{crate_version, App, AppSettings, ArgMatches};
 
-mod find_repo;
 mod hash_object;
 mod init;
 
@@ -22,8 +20,6 @@ pub(crate) fn app<'a, 'b>() -> App<'a, 'b> {
         .subcommand(hash_object::subcommand())
         .subcommand(init::subcommand())
 }
-
-pub(crate) type Result<T> = std::result::Result<T, Box<dyn Error>>;
 
 pub(crate) struct Cli<'a> {
     pub arg_matches: ArgMatches<'a>,
@@ -47,10 +43,7 @@ impl<'a> Cli<'a> {
     }
 
     #[cfg(test)]
-    pub fn run_with_stdin_and_args<I, T>(
-        stdin: Vec<u8>,
-        args: I,
-    ) -> std::result::Result<Vec<u8>, Box<dyn Error>>
+    pub fn run_with_stdin_and_args<I, T>(stdin: Vec<u8>, args: I) -> Result<Vec<u8>>
     where
         I: IntoIterator<Item = T>,
         T: Into<OsString> + Clone,
@@ -72,7 +65,7 @@ impl<'a> Cli<'a> {
     }
 
     #[cfg(test)]
-    pub fn run_with_args<I, T>(args: I) -> std::result::Result<Vec<u8>, Box<dyn Error>>
+    pub fn run_with_args<I, T>(args: I) -> Result<Vec<u8>>
     where
         I: IntoIterator<Item = T>,
         T: Into<OsString> + Clone,

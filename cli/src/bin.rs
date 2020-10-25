@@ -1,9 +1,15 @@
 #![deny(warnings)]
 
-use std::io::{self, Write};
+use std::{
+    error::Error,
+    io::{self, Write},
+};
 
 mod cmds;
+mod find_repo;
 mod temp_cwd;
+
+pub(crate) type Result<T> = std::result::Result<T, Box<dyn Error>>;
 
 #[allow(unused_must_use)]
 #[cfg(not(tarpaulin_include))]
