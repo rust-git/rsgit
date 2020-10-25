@@ -14,8 +14,8 @@ use rsgit_on_disk::OnDiskRepo;
 // where there is a `.git` directory nested within the
 // given path.
 //
-// Returns a `Result` with `rsgit::repo::OnDiskRepo` or
-// `rsgit::repo::Error` if no such repo exists.
+// Returns a `Result` with `rsgit_core::repo::OnDiskRepo` or
+// `rsgit_core::repo::Error` if no such repo exists.
 #[allow(dead_code)] // TEMPORARY: Until other code actually uses this.
 pub fn from_path<P: AsRef<Path>>(path: P) -> Result<OnDiskRepo> {
     // TO DO: Look in other places for repo.
@@ -34,8 +34,8 @@ pub fn from_path<P: AsRef<Path>>(path: P) -> Result<OnDiskRepo> {
 // where there is a `.git` directory nested within the
 // given path.
 //
-// Returns a `Result` with `rsgit::repo::OnDiskRepo` or
-// `rsgit::repo::Error` if no such repo exists.
+// Returns a `Result` with `rsgit_core::repo::OnDiskRepo` or
+// `rsgit_core::repo::Error` if no such repo exists.
 #[allow(dead_code)] // TEMPORARY: Until other code actually uses this.
 #[cfg(not(tarpaulin_include))]
 pub fn from_current_dir() -> Result<OnDiskRepo> {
