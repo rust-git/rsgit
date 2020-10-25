@@ -193,6 +193,57 @@ mod tests {
 
     #[test]
     #[serial]
+    fn matches_command_line_git_literally() {
+        let stdin: Vec<u8> = b"test content\n".to_vec();
+
+        let c_tgr = TempGitRepo::new();
+        let c_path = c_tgr.path();
+
+        let mut cgit = Command::new("git")
+            .current_dir(c_path)
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .args(&[
+                "hash-object",
+                "--literally",
+                "-t",
+                "whatever",
+                "-w",
+                "--stdin",
+            ])
+            .spawn()
+            .unwrap();
+
+        {
+            let cgit_stdin = cgit.stdin.as_mut().unwrap();
+            cgit_stdin.write_all(&stdin).unwrap();
+        }
+
+        let c_stdout = cgit.wait_with_output().unwrap().stdout;
+        let r_tgr = TempGitRepo::new();
+        let r_path = r_tgr.path();
+
+        let _r_cwd = TempCwd::new(r_path);
+        let r_stdout = Cli::run_with_stdin_and_args(
+            stdin,
+            vec![
+                "hash-object",
+                "--literally",
+                "-t",
+                "whatever",
+                "-w",
+                "--stdin",
+            ],
+        )
+        .unwrap();
+
+        assert_eq!(c_stdout, r_stdout);
+
+        assert!(!dir_diff::is_different(c_path, r_path).unwrap());
+    }
+
+    #[test]
+    #[serial]
     fn err_corrupt_commit() {
         let stdin: Vec<u8> = b"test content\n".to_vec();
 
