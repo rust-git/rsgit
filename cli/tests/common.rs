@@ -31,11 +31,15 @@ pub fn compare_git_and_rsgit(op: GitOp) {
 }
 
 #[allow(dead_code)]
+#[cfg(not(tarpaulin_include))]
 pub fn compare_git_and_rsgit_in(op: GitOp, path: &str) {
     // Use this when a test fails.
     // Set `path` to some common directory (~/Desktop, for example)
     // and then you can diff the `cgit` and `rsgit` directories in that directory
     // to understand the failure.
+
+    // Since this is only meant to be used when a test fails,
+    // we are not surprised by the code coverage gap here in normal operation.
 
     let path = Path::new(path);
 
