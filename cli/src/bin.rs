@@ -1,3 +1,5 @@
+#![deny(warnings)]
+
 use std::io::{self, Write};
 
 mod cmds;

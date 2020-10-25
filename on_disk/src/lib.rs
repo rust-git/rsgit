@@ -7,6 +7,8 @@
 //! That said, it does intentionally use the same `.git` folder format as
 //! command-line git so that results may be compared for similar operations.
 
+#![deny(warnings)]
+
 mod on_disk_repo;
 pub use on_disk_repo::OnDiskRepo;
 
