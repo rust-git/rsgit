@@ -12,6 +12,7 @@ use std::{
 ///
 /// Because this struct is intended for testing, its functions
 /// panic instead of returning Result structs.
+#[derive(Default)]
 pub struct TempGitRepo {
     #[allow(dead_code)] // tempdir is only used for RAII
     tempdir: Option<tempfile::TempDir>,

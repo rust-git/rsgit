@@ -6,6 +6,7 @@ edition = "2018"
 
 [[bin]]
 name = "rsgit"
+doc = false
 path = "src/bin.rs"
 
 # We use the C-language version of zlib for now because the Rust implementation

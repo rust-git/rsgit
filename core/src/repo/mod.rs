@@ -4,10 +4,10 @@
 //!
 //! Rsgit intends to allow repositories to be stored in multiple different mechanisms.
 //! While it includes built-in support for local on-disk repositories
-//! (see [`OnDisk`]), you could envision repositories stored entirely
+//! (see [`OnDiskRepo`]), you could envision repositories stored entirely
 //! in memory, or on a remote file system or database.
 //!
-//! [`OnDisk`]: struct.OnDisk.html
+//! [`OnDiskRepo`]: struct.OnDiskRepo.html
 
 use crate::object::Object;
 

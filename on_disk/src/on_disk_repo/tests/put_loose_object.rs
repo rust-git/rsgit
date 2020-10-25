@@ -29,7 +29,7 @@ fn matches_command_line_git() {
 
     let rsgit_temp = tempdir().unwrap();
     let r_path = rsgit_temp.path();
-    let mut r = OnDisk::init(r_path).unwrap();
+    let mut r = OnDiskRepo::init(r_path).unwrap();
 
     let o = Object::new(&Kind::Blob, Box::new(TEST_CONTENT.to_vec())).unwrap();
     r.put_loose_object(&o).unwrap();
@@ -56,7 +56,7 @@ fn matches_command_line_git_large_file() {
 
     let rsgit_temp = tempdir().unwrap();
     let r_path = rsgit_temp.path();
-    let mut r = OnDisk::init(r_path).unwrap();
+    let mut r = OnDiskRepo::init(r_path).unwrap();
 
     let o = Object::new(&Kind::Blob, Box::new(test_content.to_vec())).unwrap();
     assert_eq!(object_id, o.id().to_string());
@@ -69,7 +69,7 @@ fn matches_command_line_git_large_file() {
 fn error_cant_create_objects_dir() {
     let rsgit_temp = tempdir().unwrap();
     let r_path = rsgit_temp.path();
-    let mut r = OnDisk::init(r_path).unwrap();
+    let mut r = OnDiskRepo::init(r_path).unwrap();
 
     let objects_dir = r_path.join(".git/objects/d6");
     fs::write(&objects_dir, "sand in the gears").unwrap();
@@ -87,7 +87,7 @@ fn error_cant_create_objects_dir() {
 fn error_object_exists() {
     let rsgit_temp = tempdir().unwrap();
     let r_path = rsgit_temp.path();
-    let mut r = OnDisk::init(r_path).unwrap();
+    let mut r = OnDiskRepo::init(r_path).unwrap();
 
     let mut object_path = r_path.join(".git/objects/d6");
     fs::create_dir(&object_path).unwrap();

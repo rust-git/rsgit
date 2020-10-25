@@ -3,7 +3,7 @@ use std::{io::Write, path::Path};
 use super::{Cli, Result};
 
 use clap::{App, Arg, ArgMatches, SubCommand};
-use rsgit_on_disk::OnDisk;
+use rsgit_on_disk::OnDiskRepo;
 
 pub(crate) fn subcommand<'a, 'b>() -> App<'a, 'b> {
     SubCommand::with_name("init")
@@ -19,7 +19,7 @@ pub(crate) fn run(cli: &mut Cli, init_matches: &ArgMatches) -> Result<()> {
     let dir = init_matches.value_of("directory").unwrap();
 
     let path = Path::new(dir);
-    OnDisk::init(path)?;
+    OnDiskRepo::init(path)?;
 
     writeln!(
         cli,
