@@ -11,6 +11,7 @@ use std::ffi::OsString;
 use clap::{crate_version, App, AppSettings, ArgMatches};
 
 mod find_repo;
+mod hash_object;
 mod init;
 
 pub(crate) fn app<'a, 'b>() -> App<'a, 'b> {
@@ -18,6 +19,7 @@ pub(crate) fn app<'a, 'b>() -> App<'a, 'b> {
         .version(crate_version!())
         .setting(AppSettings::SubcommandRequiredElseHelp)
         .setting(AppSettings::VersionlessSubcommands)
+        .subcommand(hash_object::subcommand())
         .subcommand(init::subcommand())
 }
 
@@ -36,7 +38,8 @@ impl<'a> Cli<'a> {
         // the Cli struct through to subcommand imps.
 
         match matches.subcommand() {
-            ("init", Some(init_matches)) => init::run(self, &init_matches),
+            ("hash-object", Some(m)) => hash_object::run(self, &m),
+            ("init", Some(m)) => init::run(self, &m),
             _ => unreachable!(),
             // unreachable: Should have exited out with appropriate help or
             // error message if no subcommand was given.
@@ -44,7 +47,10 @@ impl<'a> Cli<'a> {
     }
 
     #[cfg(test)]
-    pub fn run_with_args<I, T>(args: I) -> std::result::Result<Vec<u8>, Box<dyn Error>>
+    pub fn run_with_stdin_and_args<I, T>(
+        stdin: Vec<u8>,
+        args: I,
+    ) -> std::result::Result<Vec<u8>, Box<dyn Error>>
     where
         I: IntoIterator<Item = T>,
         T: Into<OsString> + Clone,
@@ -52,7 +58,7 @@ impl<'a> Cli<'a> {
         let mut args: Vec<OsString> = args.into_iter().map(|x| x.into()).collect();
         args.insert(0, OsString::from("rsgit"));
 
-        let mut stdin = std::io::Cursor::new(Vec::new());
+        let mut stdin = std::io::Cursor::new(stdin);
         let mut stdout = Vec::new();
 
         Cli {
@@ -63,6 +69,16 @@ impl<'a> Cli<'a> {
         .run()?;
 
         Ok(stdout)
+    }
+
+    #[cfg(test)]
+    pub fn run_with_args<I, T>(args: I) -> std::result::Result<Vec<u8>, Box<dyn Error>>
+    where
+        I: IntoIterator<Item = T>,
+        T: Into<OsString> + Clone,
+    {
+        let stdin: Vec<u8> = Vec::new();
+        Cli::run_with_stdin_and_args(stdin, args)
     }
 }
 

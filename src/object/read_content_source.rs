@@ -25,7 +25,7 @@ impl ReadContentSource {
     /// Create a `ReadContentSource` for an arbitrary [`Read`] struct.
     ///
     /// [`Read`]: https://doc.rust-lang.org/std/io/trait.Read.html
-    pub fn new<R: Read>(r: R) -> io::Result<ReadContentSource> {
+    pub fn new<R: Read>(r: &mut R) -> io::Result<ReadContentSource> {
         let mut content: Vec<u8> = Vec::new();
 
         let mut take = r.take(MAX_SIZE as u64 + 1);
@@ -60,7 +60,8 @@ mod tests {
     #[test]
     fn happy_path() {
         let tc: Vec<u8> = b"example".to_vec();
-        let rcs = ReadContentSource::new(Cursor::new(tc)).unwrap();
+        let mut c = Cursor::new(tc);
+        let rcs = ReadContentSource::new(&mut c).unwrap();
 
         assert_eq!(rcs.len(), 7);
 
@@ -88,8 +89,8 @@ mod tests {
 
     #[test]
     fn infinite_read_stream() {
-        let evil = InfiniteRead {};
-        let res = ReadContentSource::new(evil);
+        let mut evil = InfiniteRead {};
+        let res = ReadContentSource::new(&mut evil);
         assert!(res.is_err());
     }
 }

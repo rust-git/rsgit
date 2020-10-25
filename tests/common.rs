@@ -12,9 +12,13 @@ pub fn compare_git_and_rsgit(op: GitOp) {
     let c_dir = c_temp.path();
     sanitize_repo(c_dir);
 
+    println!("Running in C git ...");
+
     let cgit = OsStr::new("git");
     set_current_dir(c_dir).unwrap();
     op(&cgit, &c_dir);
+
+    println!("Running in rsgit ...");
 
     let r_temp = tempfile::tempdir().unwrap();
     let r_dir = r_temp.path();

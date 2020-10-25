@@ -29,6 +29,7 @@ assert_cmd = "1.0"
 clap = "2.33"
 dir-diff = "0.3.2"
 predicates = "1"
+serial_test = "0.5.0"
 
 [features]
 default = ["clap"]
