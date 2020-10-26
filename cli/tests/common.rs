@@ -4,9 +4,6 @@ use assert_cmd::cargo;
 
 type GitOp = fn(&OsStr, &Path);
 
-// Using #[allow(dead_code)] throughout this mod because
-// it is only referenced via other test scripts.
-#[allow(dead_code)]
 pub fn compare_git_and_rsgit(op: GitOp) {
     let c_temp = tempfile::tempdir().unwrap();
     let c_dir = c_temp.path();
@@ -31,11 +28,16 @@ pub fn compare_git_and_rsgit(op: GitOp) {
 }
 
 #[allow(dead_code)]
+#[cfg(not(tarpaulin_include))]
 pub fn compare_git_and_rsgit_in(op: GitOp, path: &str) {
     // Use this when a test fails.
     // Set `path` to some common directory (~/Desktop, for example)
     // and then you can diff the `cgit` and `rsgit` directories in that directory
     // to understand the failure.
+
+    // Since this is only meant to be used when a test fails,
+    // we are not surprised by the code coverage gap here in normal operation
+    // nor the dead_code warning.
 
     let path = Path::new(path);
 
@@ -73,6 +75,8 @@ pub fn compare_git_and_rsgit_in(op: GitOp, path: &str) {
 
 #[allow(dead_code)]
 pub fn init_empty_repo(path: &Path) {
+    // Used only by other test scripts that aren't directly in this crate,
+    // so Cargo mistakenly identifies this as dead code.
     Command::new("git")
         .args(&["init", path.to_str().unwrap()])
         .output()

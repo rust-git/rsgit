@@ -1,23 +1,15 @@
-//! A repository that stores content on the local file system.
-//!
-//! **IMPORTANT NOTE:** This is intended as a reference implementation largely
-//! for testing purposes and may not necessarily handle all of the edge cases that
-//! the traditional `git` command-line interface will handle.
-//!
-//! That said, it does intentionally use the same `.git` folder format as
-//! command-line git so that results may be compared for similar operations.
-
 use std::{
     fs::{self, OpenOptions},
     io::{self, Write},
     path::{Path, PathBuf},
 };
 
-use super::{Error, Repo, Result};
-
-use crate::object::Object;
-
 use flate2::{write::ZlibEncoder, Compression};
+
+use rsgit_core::{
+    object::Object,
+    repo::{Error, Repo, Result},
+};
 
 /// Implementation of [`Repo`] that stores content on the local file system.
 ///
@@ -28,14 +20,14 @@ use flate2::{write::ZlibEncoder, Compression};
 /// That said, it does intentionally use the same `.git` folder format as command-line
 /// `git` so that results may be compared for similar operations.
 ///
-/// [`Repo`]: trait.Repo.html
+/// [`Repo`]: ../rsgit_core/repo/trait.Repo.html
 #[derive(Debug)]
-pub struct OnDisk {
+pub struct OnDiskRepo {
     work_dir: PathBuf,
     git_dir: PathBuf,
 }
 
-impl OnDisk {
+impl OnDiskRepo {
     /// Create an on-disk git repository.
     ///
     /// `work_dir` should be the top-level working directory. A `.git` directory should
@@ -54,7 +46,7 @@ impl OnDisk {
             return Err(Error::GitDirDoesntExist(git_dir));
         }
 
-        Ok(OnDisk { work_dir, git_dir })
+        Ok(OnDiskRepo { work_dir, git_dir })
     }
 
     /// Creates a new, empty git repository on the local file system.
@@ -78,7 +70,7 @@ impl OnDisk {
         create_objects_dir(&git_dir)?;
         create_refs_dir(&git_dir)?;
 
-        Ok(OnDisk {
+        Ok(OnDiskRepo {
             work_dir: work_dir.as_ref().to_path_buf(),
             git_dir,
         })
@@ -95,7 +87,7 @@ impl OnDisk {
     }
 }
 
-impl Repo for OnDisk {
+impl Repo for OnDiskRepo {
     fn put_loose_object(&mut self, object: &Object) -> Result<()> {
         let object_id = object.id().to_string();
         let (dir, path) = object_id.split_at(2);

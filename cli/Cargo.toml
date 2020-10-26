@@ -1,0 +1,27 @@
+[package]
+name = "rsgit_cli"
+version = "0.1.0"
+authors = ["Eric Scouten <eric@scouten.com>"]
+edition = "2018"
+
+[[bin]]
+name = "rsgit"
+doc = false
+path = "src/bin.rs"
+
+# We use the C-language version of zlib for now because the Rust implementation
+# doesn't match git's implementation byte-for-byte. Possible we could swap out
+# implementations later, but not for now.
+
+[dependencies]
+clap = "2.33"
+flate2 = { version = "1.0", features = ["zlib"], default-features = false }
+rsgit_core = { path = "../core" }
+rsgit_on_disk = { path = "../on_disk" }
+tempfile = "3.1.0"
+
+[dev-dependencies]
+assert_cmd = "1.0"
+dir-diff = "0.3.2"
+predicates = "1"
+serial_test = "0.5.0"

@@ -1,56 +1,36 @@
 #![deny(warnings)]
 
-use std::{
-    error::Error,
-    io::{Read, Write},
-};
+use std::io::{Read, Write};
 
 #[cfg(test)]
 use std::ffi::OsString;
 
-use clap::{crate_version, App, AppSettings, ArgMatches};
+use crate::{cmds, Result};
 
-mod find_repo;
-mod hash_object;
-mod init;
+use clap::{crate_version, AppSettings, ArgMatches};
 
-pub(crate) fn app<'a, 'b>() -> App<'a, 'b> {
-    App::new("rsgit")
+pub(crate) fn clap_app<'a, 'b>() -> clap::App<'a, 'b> {
+    let app = clap::App::new("rsgit")
         .version(crate_version!())
         .setting(AppSettings::SubcommandRequiredElseHelp)
-        .setting(AppSettings::VersionlessSubcommands)
-        .subcommand(hash_object::subcommand())
-        .subcommand(init::subcommand())
+        .setting(AppSettings::VersionlessSubcommands);
+
+    cmds::add_subcommands(app)
 }
 
-pub(crate) type Result<T> = std::result::Result<T, Box<dyn Error>>;
-
-pub(crate) struct Cli<'a> {
+pub(crate) struct App<'a> {
     pub arg_matches: ArgMatches<'a>,
     pub stdin: &'a mut dyn Read,
     pub stdout: &'a mut dyn Write,
 }
 
-impl<'a> Cli<'a> {
+impl<'a> App<'a> {
     pub fn run(&mut self) -> Result<()> {
-        let matches = self.arg_matches.clone();
-        // ^^ Ugh. Need an independent copy of matches so we can still pass
-        // the Cli struct through to subcommand imps.
-
-        match matches.subcommand() {
-            ("hash-object", Some(m)) => hash_object::run(self, &m),
-            ("init", Some(m)) => init::run(self, &m),
-            _ => unreachable!(),
-            // unreachable: Should have exited out with appropriate help or
-            // error message if no subcommand was given.
-        }
+        cmds::dispatch(self)
     }
 
     #[cfg(test)]
-    pub fn run_with_stdin_and_args<I, T>(
-        stdin: Vec<u8>,
-        args: I,
-    ) -> std::result::Result<Vec<u8>, Box<dyn Error>>
+    pub fn run_with_stdin_and_args<I, T>(stdin: Vec<u8>, args: I) -> Result<Vec<u8>>
     where
         I: IntoIterator<Item = T>,
         T: Into<OsString> + Clone,
@@ -61,8 +41,8 @@ impl<'a> Cli<'a> {
         let mut stdin = std::io::Cursor::new(stdin);
         let mut stdout = Vec::new();
 
-        Cli {
-            arg_matches: app().get_matches_from_safe(args)?,
+        App {
+            arg_matches: clap_app().get_matches_from_safe(args)?,
             stdin: &mut stdin,
             stdout: &mut stdout,
         }
@@ -72,17 +52,17 @@ impl<'a> Cli<'a> {
     }
 
     #[cfg(test)]
-    pub fn run_with_args<I, T>(args: I) -> std::result::Result<Vec<u8>, Box<dyn Error>>
+    pub fn run_with_args<I, T>(args: I) -> Result<Vec<u8>>
     where
         I: IntoIterator<Item = T>,
         T: Into<OsString> + Clone,
     {
         let stdin: Vec<u8> = Vec::new();
-        Cli::run_with_stdin_and_args(stdin, args)
+        App::run_with_stdin_and_args(stdin, args)
     }
 }
 
-impl<'a> Write for Cli<'a> {
+impl<'a> Write for App<'a> {
     fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
         self.stdout.write(buf)
     }

@@ -1,6 +1,7 @@
 use std::{env, path::Path};
 
-use rsgit::repo::{OnDisk, Result};
+use rsgit_core::repo::Result;
+use rsgit_on_disk::OnDiskRepo;
 
 // Discover a git repo starting from the given path.
 //
@@ -13,13 +14,12 @@ use rsgit::repo::{OnDisk, Result};
 // where there is a `.git` directory nested within the
 // given path.
 //
-// Returns a `Result` with `rsgit::repo::OnDisk` or
-// `rsgit::repo::Error` if no such repo exists.
-#[allow(dead_code)] // TEMPORARY: Until other code actually uses this.
-pub fn from_path<P: AsRef<Path>>(path: P) -> Result<OnDisk> {
+// Returns a `Result` with `rsgit_core::repo::OnDiskRepo` or
+// `rsgit_core::repo::Error` if no such repo exists.
+pub fn from_path<P: AsRef<Path>>(path: P) -> Result<OnDiskRepo> {
     // TO DO: Look in other places for repo.
     // https://github.com/rust-git/rsgit/issues/80
-    OnDisk::new(path)
+    OnDiskRepo::new(path)
 }
 
 // Discover a git repo starting from the current working directory.
@@ -33,11 +33,10 @@ pub fn from_path<P: AsRef<Path>>(path: P) -> Result<OnDisk> {
 // where there is a `.git` directory nested within the
 // given path.
 //
-// Returns a `Result` with `rsgit::repo::OnDisk` or
-// `rsgit::repo::Error` if no such repo exists.
-#[allow(dead_code)] // TEMPORARY: Until other code actually uses this.
+// Returns a `Result` with `rsgit_on_disk::OnDiskRepo` or
+// `rsgit_core::repo::Error` if no such repo exists.
 #[cfg(not(tarpaulin_include))]
-pub fn from_current_dir() -> Result<OnDisk> {
+pub fn from_current_dir() -> Result<OnDiskRepo> {
     // This function is excluded from code coverage because we can't
     // be sure of the execution environment while testing. So we keep
     // it as simple as possible.
@@ -49,9 +48,9 @@ pub fn from_current_dir() -> Result<OnDisk> {
 mod tests {
     use super::*;
 
-    use crate::test_support::TempGitRepo;
+    use rsgit_core::repo::Error;
 
-    use rsgit::repo::Error;
+    use rsgit_on_disk::TempGitRepo;
 
     #[test]
     fn simple_case() {
