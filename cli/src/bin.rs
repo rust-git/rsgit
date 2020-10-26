@@ -5,6 +5,9 @@ use std::{
     io::{self, Write},
 };
 
+mod app;
+pub(crate) use app::App;
+
 mod cmds;
 mod find_repo;
 mod temp_cwd;
@@ -24,15 +27,15 @@ fn main() {
     let stdout = io::stdout();
     let mut stdout = stdout.lock();
 
-    let mut cli = cmds::Cli {
-        arg_matches: cmds::app().get_matches(),
+    let mut app = App {
+        arg_matches: app::clap_app().get_matches(),
         stdin: &mut stdin,
         stdout: &mut stdout,
     };
 
-    let r = cli.run();
+    let r = app.run();
 
-    cli.flush();
+    app.flush();
     // Intentionally ignoring the result of this flush.
 
     std::process::exit(match r {

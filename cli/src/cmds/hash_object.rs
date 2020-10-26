@@ -1,15 +1,15 @@
 use std::io::Write;
 
-use crate::{cmds::Cli, find_repo, Result};
+use crate::{find_repo, App, Result};
 
-use clap::{App, Arg, ArgMatches, Error, ErrorKind, SubCommand};
+use clap::{self, Arg, ArgMatches, Error, ErrorKind, SubCommand};
 
 use rsgit_core::{
     object::{ContentSource, FileContentSource, Kind, Object, ReadContentSource},
     repo::Repo,
 };
 
-pub(crate) fn subcommand<'a, 'b>() -> App<'a, 'b> {
+pub(crate) fn subcommand<'a, 'b>() -> clap::App<'a, 'b> {
     SubCommand::with_name("hash-object")
         .about("Compute object ID and optionally creates a blob from a file")
         .arg(
@@ -36,8 +36,8 @@ pub(crate) fn subcommand<'a, 'b>() -> App<'a, 'b> {
         .arg(Arg::with_name("file"))
 }
 
-pub(crate) fn run(cli: &mut Cli, args: &ArgMatches) -> Result<()> {
-    let object = object_from_args(cli, &args)?;
+pub(crate) fn run(app: &mut App, args: &ArgMatches) -> Result<()> {
+    let object = object_from_args(app, &args)?;
 
     if !args.is_present("literally") && !object.is_valid()? {
         return Err(Box::new(Error {
@@ -52,14 +52,14 @@ pub(crate) fn run(cli: &mut Cli, args: &ArgMatches) -> Result<()> {
         repo.put_loose_object(&object)?;
     }
 
-    writeln!(cli, "{}", object.id())?;
+    writeln!(app, "{}", object.id())?;
 
     Ok(())
 }
 
-fn object_from_args(cli: &mut Cli, args: &ArgMatches) -> Result<Object> {
+fn object_from_args(app: &mut App, args: &ArgMatches) -> Result<Object> {
     let kind = type_from_args(&args)?;
-    let content_source = content_source_from_args(cli, &args)?;
+    let content_source = content_source_from_args(app, &args)?;
     let object = Object::new(&kind, content_source)?;
     Ok(object)
 }
@@ -87,14 +87,14 @@ fn type_from_args(args: &ArgMatches) -> Result<Kind> {
     }
 }
 
-fn content_source_from_args(cli: &mut Cli, args: &ArgMatches) -> Result<Box<dyn ContentSource>> {
+fn content_source_from_args(app: &mut App, args: &ArgMatches) -> Result<Box<dyn ContentSource>> {
     let stdin = args.is_present("stdin");
     let file = args.value_of("file");
 
     if file.is_some() && !stdin {
         Ok(Box::new(FileContentSource::new(file.unwrap())?))
     } else if stdin && file.is_none() {
-        Ok(Box::new(ReadContentSource::new(&mut cli.stdin)?))
+        Ok(Box::new(ReadContentSource::new(&mut app.stdin)?))
     } else {
         Err(Box::new(Error {
             message: "content source must be either --stdin or a file path".to_string(),
@@ -112,7 +112,7 @@ mod tests {
         process::{Command, Stdio},
     };
 
-    use crate::{cmds::Cli, temp_cwd::TempCwd};
+    use crate::{temp_cwd::TempCwd, App};
 
     use rsgit_on_disk::TempGitRepo;
     use serial_test::serial;
@@ -124,7 +124,7 @@ mod tests {
         // d670460b4b4aece5915caf5c68d12f560a9fe3e4
 
         let stdin: Vec<u8> = b"test content\n".to_vec();
-        let stdout = Cli::run_with_stdin_and_args(stdin, vec!["hash-object", "--stdin"]).unwrap();
+        let stdout = App::run_with_stdin_and_args(stdin, vec!["hash-object", "--stdin"]).unwrap();
 
         let expected_stdout = "d670460b4b4aece5915caf5c68d12f560a9fe3e4\n";
         assert_eq!(stdout, expected_stdout.as_bytes());
@@ -144,7 +144,7 @@ mod tests {
 
         let path_str = path.to_str().unwrap();
 
-        let rsgit_stdout = Cli::run_with_args(vec!["hash-object", path_str]).unwrap();
+        let rsgit_stdout = App::run_with_args(vec!["hash-object", path_str]).unwrap();
 
         let cgit_stdout = Command::new("git")
             .args(&["hash-object", path_str])
@@ -182,7 +182,7 @@ mod tests {
 
         let _r_cwd = TempCwd::new(r_path);
         let r_stdout =
-            Cli::run_with_stdin_and_args(stdin, vec!["hash-object", "-w", "--stdin"]).unwrap();
+            App::run_with_stdin_and_args(stdin, vec!["hash-object", "-w", "--stdin"]).unwrap();
 
         assert_eq!(c_stdout, r_stdout);
 
@@ -222,7 +222,7 @@ mod tests {
         let r_path = r_tgr.path();
 
         let _r_cwd = TempCwd::new(r_path);
-        let r_stdout = Cli::run_with_stdin_and_args(
+        let r_stdout = App::run_with_stdin_and_args(
             stdin,
             vec![
                 "hash-object",
@@ -252,7 +252,7 @@ mod tests {
         let r_path = r_tgr.path();
 
         let _r_cwd = TempCwd::new(r_path);
-        let r_err = Cli::run_with_stdin_and_args(
+        let r_err = App::run_with_stdin_and_args(
             stdin,
             vec!["hash-object", "-t", "commit", "-w", "--stdin"],
         )
@@ -276,7 +276,7 @@ mod tests {
 
         let _r_cwd = TempCwd::new(r_path);
         let r_err =
-            Cli::run_with_stdin_and_args(stdin, vec!["hash-object", "-t", "tree", "-w", "--stdin"])
+            App::run_with_stdin_and_args(stdin, vec!["hash-object", "-t", "tree", "-w", "--stdin"])
                 .unwrap_err();
 
         assert_eq!(r_err.to_string(), "corrupt tree\n");
@@ -297,7 +297,7 @@ mod tests {
 
         let _r_cwd = TempCwd::new(r_path);
         let r_err =
-            Cli::run_with_stdin_and_args(stdin, vec!["hash-object", "-t", "tag", "-w", "--stdin"])
+            App::run_with_stdin_and_args(stdin, vec!["hash-object", "-t", "tag", "-w", "--stdin"])
                 .unwrap_err();
 
         assert_eq!(r_err.to_string(), "corrupt tag\n");
@@ -317,7 +317,7 @@ mod tests {
         let r_path = r_tgr.path();
 
         let _r_cwd = TempCwd::new(r_path);
-        let r_err = Cli::run_with_stdin_and_args(
+        let r_err = App::run_with_stdin_and_args(
             stdin,
             vec!["hash-object", "-t", "bogus", "-w", "--stdin"],
         )
@@ -343,7 +343,7 @@ mod tests {
         let r_path = r_tgr.path();
 
         let _r_cwd = TempCwd::new(r_path);
-        let r_err = Cli::run_with_stdin_and_args(stdin, vec!["hash-object", "-t", "blob", "-w"])
+        let r_err = App::run_with_stdin_and_args(stdin, vec!["hash-object", "-t", "blob", "-w"])
             .unwrap_err();
 
         assert_eq!(
@@ -378,7 +378,7 @@ mod tests {
         let r_path = r_tgr.path();
 
         let _r_cwd = TempCwd::new(r_path);
-        let r_err = Cli::run_with_stdin_and_args(
+        let r_err = App::run_with_stdin_and_args(
             stdin,
             vec!["hash-object", "-t", "blob", "-w", "--stdin", path_str],
         )
